@@ -1,0 +1,4 @@
+FROM tina4stack/php:8.1
+WORKDIR /var/www/html
+#CMD ["composer", "start-service"]
+CMD ["sh", "-c", "while :; do echo 'Running'; sleep 3600; done"]
