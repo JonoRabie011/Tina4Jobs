@@ -2,8 +2,6 @@
 
 namespace Tina4Jobs;
 
-use Serializable;
-
 interface Tina4Job
 {
 

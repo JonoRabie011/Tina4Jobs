@@ -2,7 +2,7 @@
     "name": "tina4components/tina4jobsmodule",
     "description": "This is a package that will allows you to add a redis jobs queue to any tin4 project",
     "require": {
-        "tina4stack/tina4php": "^2.0"
+        "tina4stack/tina4php-core": "^2.0"
     },
     "scripts": {
         "tina4": "tina4",
@@ -12,7 +12,6 @@
         "test:verbose": "@tina4 tests:verbose",
         "initialize": "@tina4 initialize:run",
         "start": "@tina4 webservice:run",
-        "start-service": "@tina4service",
         "start-jobs": "@tina4jobs"
     },
     "classmap": [
