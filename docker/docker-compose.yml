@@ -1,38 +1,12 @@
 version: "3"
 
-x-tina4-sso-backend-common-backend-variables:
-  &tina4-sso-backend-common-backend-variables
-  BASE_URL: 'http://localhost:7777'
+x-tina4-jobs-common-variables:
+  &tina4-jobs-common-variables
+  BASE_URL: 'http://localhost:7145'
   REDIS_HOST: redis
   REDIS_PORT: 6379
-  DATABASE_HOST: database
-  DATABASE_ROOT: SSO_ROOT_PASSWORD
-  DATABASE_NAME: SSO_DATABASE
-  DATABASE_USER: SSO_USERNAME
-  DATABASE_PASSWORD: SSO_PASSWORD
-  DATABASE_PORT: 5321
   DEFAULT_USER_TOKEN_EXPIRY_DAYS: 1
   TINA4_SERVICE_TIME: 60
-
-  MAIL_ENCRYPTION: "true"
-  MAIL_USERNAME: 'no-reply@poseidontechnologies.co.za'
-  MAIL_PASSWORD: 'CZ69V8bySI6Oy1j'
-  MAIL_FROM_NAME: 'Poseidon Technologies'
-  MAIL_FROM_ADDRESS: noreply@posideontechnologies.com
-  MAIL_DRIVER: smtp
-  MAIL_SERVER: mail.poseidontechnologies.co.za
-  MAIL_PORT: 587
-  MAIL_TEMPLATE_PATH: '/email'
-
-#  MAIL_ENCRYPTION: "false"
-#  MAIL_USERNAME: 'null'
-#  MAIL_PASSWORD: 'null'
-#  MAIL_FROM_NAME: 'Poseidon Technologies'
-#  MAIL_FROM_ADDRESS: noreply@posideontechnologies.com
-#  MAIL_DRIVER: smtp
-#  MAIL_SERVER: smtp://127.0.0.1
-#  MAIL_PORT: 1025
-#  MAIL_TEMPLATE_PATH: '/templates'
 
 services:
   app:
@@ -41,7 +15,7 @@ services:
       context: ./
       dockerfile: Dockerfile
     environment:
-      <<: *tina4-sso-backend-common-backend-variables
+      <<: *tina4-jobs-common-variables
     ports:
       - "9000:7145"
     volumes:
@@ -58,20 +32,19 @@ services:
     networks:
       - internal
 
-#  jobs:
-#    container_name: tina4_jobs_jobs
-#    build:
-#      context: ./
-#      dockerfile: Dockerfile-services
-#    environment:
-#      <<: *tina4-sso-backend-common-backend-variables
-#    volumes:
-#      - ../:/var/www/html
-#    networks:
-#      - internal
-#    depends_on:
-#      database:
-#        condition: service_healthy
+  jobs:
+    container_name: tina4_jobs_jobs
+    build:
+      context: ./
+      dockerfile: Dockerfile-jobs
+    environment:
+      <<: *tina4-jobs-common-variables
+    volumes:
+      - ../:/var/www/html
+    networks:
+      - internal
+    depends_on:
+      - redis
 
   mailcatcher:
     container_name: tina4_jobs_mailcatcher
