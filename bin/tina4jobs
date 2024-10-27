@@ -17,7 +17,7 @@ foreach (get_included_files() as $id => $file) {
 }
 
 if (empty($rootPath)) {
-//    $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4stack" . DIRECTORY_SEPARATOR . "tina4php-core" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", __FILE__);
+    $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", __FILE__);
     $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", __FILE__);
 }
 
