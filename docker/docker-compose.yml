@@ -24,14 +24,6 @@ services:
       - internal
     depends_on:
       - redis
-
-  redis:
-    image: redis:latest
-    ports:
-      - 6379:6379
-    networks:
-      - internal
-
   jobs:
     container_name: tina4_jobs_jobs
     build:
@@ -45,20 +37,12 @@ services:
       - internal
     depends_on:
       - redis
-
-  mailcatcher:
-    container_name: tina4_jobs_mailcatcher
-    restart: on-failure
-    image: dockage/mailcatcher:0.8.2
+  redis:
+    image: redis:latest
     ports:
-      - "1080:1080"
-      - "1025:1025"
+      - 6379:6379
     networks:
       - internal
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:1080/ || exit 1"]
-      retries: 3
-      timeout: 5s
 
 networks:
   internal:
