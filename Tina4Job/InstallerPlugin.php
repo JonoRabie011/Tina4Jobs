@@ -35,7 +35,10 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 
     public static function initialize(Event $event)
     {
-        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "InstallerPlugin.php", "", __FILE__));
+
+//        file_get_contents(/var/www/html/vendor/tina4components/tina4jobsmodule/Tina4Job//InstallerPlugin.phpbin/tina4jobs): Failed to open stream: No such file or directory
+
+        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "/InstallerPlugin.php", "", __FILE__));
 
         if (TINA4_PROJECT_ROOT !== TINA4_DOCUMENT_ROOT) {
             $tina4Checksum = md5(file_get_contents( JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs"));
