@@ -36,23 +36,42 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
     public static function initialize(Event $event)
     {
 
+        $projectRoot = getcwd();
+        $vendorDir = $event->getComposer()->getConfig()->get('vendor-dir');
+        $modulePath = $vendorDir . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule";
+        $tina4JobsBin = $modulePath . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs";
+
+        $vendorChecksum = md5(file_get_contents( $tina4JobsBin));
+        $destChecksum = "";
+
+        if (file_exists($tina4JobsBin)) {
+            $checkContent = file_exists($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
+            $destChecksum = md5($checkContent);
+        }
+
+        if ($vendorChecksum !== $destChecksum) {
+            \Tina4\Utilities::recurseCopy($modulePath  . "bin", $projectRoot . "bin");
+        }
+
 //        file_get_contents(/var/www/html/vendor/tina4components/tina4jobsmodule/Tina4Job//InstallerPlugin.phpbin/tina4jobs): Failed to open stream: No such file or directory
 
-        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "/InstallerPlugin.php", "", __FILE__));
-
-        if (TINA4_PROJECT_ROOT !== TINA4_DOCUMENT_ROOT) {
-            $tina4Checksum = md5(file_get_contents( JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs"));
-            $destChecksum = "";
-
-            if (file_exists(JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) {
-                $checkContent = file_exists(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
-                $destChecksum = md5($checkContent);
-            }
-
-            if ($tina4Checksum !== $destChecksum) {
-                \Tina4\Utilities::recurseCopy(JOBS_MODULE_PATH  . "bin", TINA4_DOCUMENT_ROOT . "bin");
-            }
-        }
+//        $path = $event->getComposer()->getConfig()->get('vendor-dir');
+//        echo "Path: " . $path . "\n";
+////        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "InstallerPlugin.php", "", __FILE__));
+//
+//        if (TINA4_PROJECT_ROOT !== TINA4_DOCUMENT_ROOT) {
+//            $tina4Checksum = md5(file_get_contents( JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs"));
+//            $destChecksum = "";
+//
+//            if (file_exists(JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) {
+//                $checkContent = file_exists(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
+//                $destChecksum = md5($checkContent);
+//            }
+//
+//            if ($tina4Checksum !== $destChecksum) {
+//                \Tina4\Utilities::recurseCopy(JOBS_MODULE_PATH  . "bin", TINA4_DOCUMENT_ROOT . "bin");
+//            }
+//        }
         // Place any setup code here, like creating directories, setting configurations, etc.
     }
 }
