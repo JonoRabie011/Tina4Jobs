@@ -14,6 +14,16 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         // Initialization code if needed when plugin is activated
     }
 
+    public function deactivate(Composer $composer, \Composer\IO\IOInterface $io)
+    {
+        // You can leave this empty if nothing needs to happen on deactivation
+    }
+
+    public function uninstall(Composer $composer, \Composer\IO\IOInterface $io)
+    {
+        // You can leave this empty if nothing needs to happen on uninstall
+    }
+
     public static function getSubscribedEvents()
     {
         return [
