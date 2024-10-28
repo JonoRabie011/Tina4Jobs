@@ -53,5 +53,11 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         if ($vendorChecksum !== $destChecksum) {
             \Tina4\Utilities::recurseCopy($modulePath . DIRECTORY_SEPARATOR  . "bin", $projectRoot . DIRECTORY_SEPARATOR . "bin");
         }
+
+        //Remove Docker folder
+
+        if(file_exists($modulePath . DIRECTORY_SEPARATOR . "docker". DIRECTORY_SEPARATOR . "Dockerfile")) {
+            rmdir($modulePath . DIRECTORY_SEPARATOR . "docker");
+        }
     }
 }
