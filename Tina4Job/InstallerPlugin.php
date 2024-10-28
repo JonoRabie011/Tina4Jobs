@@ -42,19 +42,19 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         $tina4JobsBin = $modulePath . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs";
 
 
-        echo "Project Root: " . $projectRoot . "\n";
-        echo "Vendor Dir: " . $vendorDir . "\n";
-        echo "Module Path: " . $modulePath . "\n";
-        echo "Tina4 Jobs Bin: " . $tina4JobsBin . "\n";
-
-        echo "Vendor Checksum: " . md5(file_get_contents( $tina4JobsBin)) . "\n";
-        echo "Dest Checksum: " . md5(file_get_contents($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) . "\n";
+//        echo "Project Root: " . $projectRoot . "\n";
+//        echo "Vendor Dir: " . $vendorDir . "\n";
+//        echo "Module Path: " . $modulePath . "\n";
+//        echo "Tina4 Jobs Bin: " . $tina4JobsBin . "\n";
+//
+//        echo "Vendor Checksum: " . md5(file_get_contents( $tina4JobsBin)) . "\n";
+//        echo "Dest Checksum: " . md5(file_get_contents($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) . "\n";
 
         $vendorChecksum = md5(file_get_contents( $tina4JobsBin));
         $destChecksum = "";
 
         if (file_exists($tina4JobsBin)) {
-            $checkContent = file_exists($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
+            $checkContent = file_exists($projectRoot . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents($projectRoot . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
             $destChecksum = md5($checkContent);
         }
 
