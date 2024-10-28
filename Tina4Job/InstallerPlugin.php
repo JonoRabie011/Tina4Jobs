@@ -3,7 +3,8 @@
 namespace Tina4Jobs;
 
 use Composer\Composer;
-use Composer\IO\IOInterface;
+use Composer\Plugin\PluginInterface;
+use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Script\Event;
 
 class InstallerPlugin implements PluginInterface, EventSubscriberInterface
