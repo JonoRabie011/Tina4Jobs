@@ -5,8 +5,11 @@
         "tina4stack/tina4php": "^2.0"
     },
     "scripts": {
-        "post-package-update": [
-            "php Tina4Job/Initialize.php"
+        "post-install-cmd": [
+            "Tina4Jobs\\Installer::initialize"
+        ],
+        "post-update-cmd": [
+            "Tina4Jobs\\Installer::initialize"
         ],
         "tina4": "tina4",
         "tina4service": "tina4service",
@@ -22,7 +25,8 @@
         "src/*",
         "src/app/*",
         "src/orm/*",
-        "src/routes/*"
+        "src/routes/*",
+        "Tina4Job/*"
     ],
     "bin": [
         "bin/tina4jobs"
@@ -37,7 +41,8 @@
                 "src/",
                 "src/app/",
                 "src/orm/",
-                "src/routes"
+                "src/routes",
+                "Tina4Job/"
             ]
         }
     },
