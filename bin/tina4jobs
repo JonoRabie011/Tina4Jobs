@@ -5,7 +5,7 @@ use Tina4\Debug;
 use Tina4Jobs\Tina4Jobs;
 
 
-//Let see if it updates v2.0.3
+//Let see if it updates v2.0.4
 
 $replacePath = $argv[0]; //used to figure out where we're running
 global $rootPath;
