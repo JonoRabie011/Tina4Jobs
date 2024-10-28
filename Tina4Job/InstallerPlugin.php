@@ -42,7 +42,7 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 //    $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
         }
 
-        require_once "{$rootPath}/vendor/autoload.php";
+//        require_once "{$rootPath}/vendor/autoload.php";
 
 //echo "ROOT PATH: " . $rootPath . "\n";
 
