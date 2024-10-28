@@ -35,12 +35,12 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 
     public static function initialize(Event $event)
     {
-        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "Initialize.php", "", __FILE__));
+        define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "InstallerPlugin.php", "", __FILE__));
 
-        if (empty($rootPath)) {
-            $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "Tina4Job" . DIRECTORY_SEPARATOR . "Initialize.php", "", __FILE__);
-//    $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
-        }
+//        if (empty($rootPath)) {
+//            $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "Tina4Job" . DIRECTORY_SEPARATOR . "Initialize.php", "", __FILE__);
+////    $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
+//        }
 
 //        require_once "{$rootPath}/vendor/autoload.php";
 
@@ -51,6 +51,7 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 //echo "TINA4_PROJECT_ROOT: " . TINA4_PROJECT_ROOT . "\n";
 //echo "TINA4_DOCUMENT_ROOT: " . TINA4_DOCUMENT_ROOT . "\n";
 
+//        file_get_contents(/var/www/html/vendor/tina4components/tina4jobsmodule/Tina4Job/InstallerPlugin.phpbin/tina4jobs)
 
 ////Copy the bin folder if the vendor one has changed
         if (TINA4_PROJECT_ROOT !== TINA4_DOCUMENT_ROOT) {
