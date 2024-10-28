@@ -6,20 +6,21 @@ use Composer\Composer;
 use Composer\Plugin\PluginInterface;
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Script\Event;
+use Composer\IO\IOInterface;
 
 class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 {
-    public function activate(Composer $composer, \Composer\IO\IOInterface $io)
+    public function activate(Composer $composer, IOInterface $io)
     {
         // Initialization code if needed when plugin is activated
     }
 
-    public function deactivate(Composer $composer, \Composer\IO\IOInterface $io)
+    public function deactivate(Composer $composer, IOInterface $io)
     {
         // You can leave this empty if nothing needs to happen on deactivation
     }
 
-    public function uninstall(Composer $composer, \Composer\IO\IOInterface $io)
+    public function uninstall(Composer $composer, IOInterface $io)
     {
         // You can leave this empty if nothing needs to happen on uninstall
     }
