@@ -15,6 +15,7 @@ if (empty($rootPath)) {
 require_once "{$rootPath}/vendor/autoload.php";
 
 //echo "ROOT PATH: " . $rootPath . "\n";
+
 //echo "FILE: " . __FILE__ . "\n";
 //echo "JOBS_MODULE_PATH: " . JOBS_MODULE_PATH . "\n";
 //echo "TINA4_PROJECT_ROOT: " . TINA4_PROJECT_ROOT . "\n";
