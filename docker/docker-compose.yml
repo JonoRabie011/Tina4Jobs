@@ -22,8 +22,6 @@ services:
       - ../:/var/www/html
     networks:
       - internal
-    depends_on:
-      - redis
   jobs:
     container_name: tina4_jobs_jobs
     build:

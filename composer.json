@@ -7,12 +7,6 @@
         "composer-plugin-api": "^2.0"
     },
     "scripts": {
-        "post-install-cmd": [
-            "Tina4Jobs\\Installer::initialize"
-        ],
-        "post-update-cmd": [
-            "Tina4Jobs\\Installer::initialize"
-        ],
         "tina4": "tina4",
         "tina4service": "tina4service",
         "tina4jobs": "tina4jobs",
@@ -48,7 +42,7 @@
         }
     },
     "extra": {
-        "class": "Tina4Jobs\\InstallerPlugin"
+        "class": "\\Tina4Jobs\\InstallerPlugin"
     },
     "config": {
         "process-timeout": 0
