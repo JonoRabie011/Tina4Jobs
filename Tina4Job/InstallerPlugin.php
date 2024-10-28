@@ -9,7 +9,7 @@ use Composer\Script\Event;
 
 class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 {
-    public function activate(Composer $composer, IOInterface $io)
+    public function activate(Composer $composer, \Composer\IO\IOInterface $io)
     {
         // Initialization code if needed when plugin is activated
     }
