@@ -41,6 +41,15 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         $modulePath = $vendorDir . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule";
         $tina4JobsBin = $modulePath . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs";
 
+
+        echo "Project Root: " . $projectRoot . "\n";
+        echo "Vendor Dir: " . $vendorDir . "\n";
+        echo "Module Path: " . $modulePath . "\n";
+        echo "Tina4 Jobs Bin: " . $tina4JobsBin . "\n";
+
+        echo "Vendor Checksum: " . md5(file_get_contents( $tina4JobsBin)) . "\n";
+        echo "Dest Checksum: " . md5(file_get_contents($projectRoot  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) . "\n";
+
         $vendorChecksum = md5(file_get_contents( $tina4JobsBin));
         $destChecksum = "";
 
