@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3c963197f683f75f46c788fc6dcf8c9d",
+    "content-hash": "e966c6c0eb547b1e579a1221ccb579f0",
     "packages": [
         {
             "name": "cesargb/php-log-rotation",

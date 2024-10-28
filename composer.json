@@ -32,6 +32,7 @@
             "loadModule.php"
         ],
         "psr-4": {
+            "Tina4Jobs\\": "Tina4Job/",
             "\\": [
                 "src/",
                 "src/app/",
