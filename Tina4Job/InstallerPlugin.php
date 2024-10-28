@@ -37,32 +37,12 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
     {
         define("JOBS_MODULE_PATH", str_replace("Tina4Job" . DIRECTORY_SEPARATOR . "InstallerPlugin.php", "", __FILE__));
 
-//        if (empty($rootPath)) {
-//            $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "Tina4Job" . DIRECTORY_SEPARATOR . "Initialize.php", "", __FILE__);
-////    $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
-//        }
-
-//        require_once "{$rootPath}/vendor/autoload.php";
-
-//echo "ROOT PATH: " . $rootPath . "\n";
-
-//echo "FILE: " . __FILE__ . "\n";
-//echo "JOBS_MODULE_PATH: " . JOBS_MODULE_PATH . "\n";
-//echo "TINA4_PROJECT_ROOT: " . TINA4_PROJECT_ROOT . "\n";
-//echo "TINA4_DOCUMENT_ROOT: " . TINA4_DOCUMENT_ROOT . "\n";
-
-//        file_get_contents(/var/www/html/vendor/tina4components/tina4jobsmodule/Tina4Job/InstallerPlugin.phpbin/tina4jobs)
-
-////Copy the bin folder if the vendor one has changed
         if (TINA4_PROJECT_ROOT !== TINA4_DOCUMENT_ROOT) {
             $tina4Checksum = md5(file_get_contents( JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs"));
             $destChecksum = "";
 
             if (file_exists(JOBS_MODULE_PATH . "bin" . DIRECTORY_SEPARATOR . "tina4jobs")) {
                 $checkContent = file_exists(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? file_get_contents(TINA4_DOCUMENT_ROOT  . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
-
-//        $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", __FILE__);
-//        $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
                 $destChecksum = md5($checkContent);
             }
 
