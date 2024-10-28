@@ -56,8 +56,32 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 
         //Remove Docker folder
 
-        if(file_exists($modulePath . DIRECTORY_SEPARATOR . "docker". DIRECTORY_SEPARATOR . "Dockerfile")) {
-            rmdir($modulePath . DIRECTORY_SEPARATOR . "docker");
+        self::deleteDirectory($modulePath . DIRECTORY_SEPARATOR . "docker");
+    }
+
+    static private function deleteDirectory($dir) {
+        if (!is_dir($dir)) {
+            return false;
         }
+
+        // Open the directory and loop through its contents
+        foreach (scandir($dir) as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            $filePath = $dir . DIRECTORY_SEPARATOR . $file;
+
+            if (is_dir($filePath)) {
+                // Recursively delete subdirectory
+                deleteDirectory($filePath);
+            } else {
+                // Delete file
+                unlink($filePath);
+            }
+        }
+
+        // Remove the now-empty directory
+        return rmdir($dir);
     }
 }
