@@ -1,8 +1,10 @@
 {
     "name": "tina4components/tina4jobsmodule",
     "description": "This is a package that will allows you to add a redis jobs queue to any tin4 project",
+    "type": "composer-plugin",
     "require": {
-        "tina4stack/tina4php": "^2.0"
+        "tina4stack/tina4php": "^2.0",
+        "composer-plugin-api": "^2.0"
     },
     "scripts": {
         "post-install-cmd": [
@@ -33,8 +35,7 @@
     ],
     "autoload": {
         "files": [
-            "loadModule.php",
-            "Tina4Job/Initialize.php"
+            "loadModule.php"
         ],
         "psr-4": {
             "\\": [
@@ -45,6 +46,9 @@
                 "Tina4Job/"
             ]
         }
+    },
+    "extra": {
+        "class": "Tina4Jobs\\InstallerPlugin"
     },
     "config": {
         "process-timeout": 0
