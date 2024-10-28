@@ -43,7 +43,7 @@
         }
     },
     "extra": {
-        "class": "\\InstallerPlugin"
+        "class": "Tina4Jobs\\InstallerPlugin"
     },
     "config": {
         "process-timeout": 0
