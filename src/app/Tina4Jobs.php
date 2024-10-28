@@ -31,7 +31,7 @@ class Tina4Jobs
     /**
      * Add a job to the queue
      * @param $job Object | string Tina4Job
-     * @param $queue string The queue to add the job too
+     * @param $queue string The queue to add the job too (Not implemented yet)
      * @throws \RedisException
      *
      */
@@ -40,7 +40,7 @@ class Tina4Jobs
 
         $serializeJob = serialize($job);
 
-        $this->jobsConnection->lPush($queue, $serializeJob);
+        $this->jobsConnection->lPush("default", $serializeJob);
         $this->jobsConnection->close();
     }
 }

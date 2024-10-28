@@ -46,8 +46,7 @@ $jobs = new Tina4Jobs();
 $jobConnection = $jobs->getJobsConnection();
 
 while (TRUE && !file_exists($stopFileName)) {
-
-    $queuedName = 'test';
+    $queuedName = 'default';
 
     $job = $jobConnection->rPop($queuedName);
     if ($job) {
