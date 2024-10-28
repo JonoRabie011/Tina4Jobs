@@ -2,8 +2,6 @@
 
 namespace Tina4Jobs;
 
-use Tina4Jobs\Tina4Job;
-
 class TestJob implements Tina4Job
 {
 

@@ -21,14 +21,13 @@ if (empty($rootPath)) {
     $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
 }
 
-
 require_once "{$rootPath}vendor/autoload.php";
 define("TINA4_SUPPRESS", true);
-//
+
 if (file_exists($rootPath . "index.php")) {
     include_once $rootPath . "index.php";
 }
-//
+
 $stopFileName = "{$rootPath}stop";
 
 echo "Stop file name: {$stopFileName}\n";
@@ -36,8 +35,8 @@ if (file_exists($stopFileName)) {
     unlink($stopFileName);
 }
 
-//\Tina4\Debug::message("Running from folder {$rootPath}", TINA4_LOG_INFO);
-//\Tina4\Debug::message("Running Tina4 service", TINA4_LOG_INFO);
+\Tina4\Debug::message("Running from folder {$rootPath}", TINA4_LOG_INFO);
+\Tina4\Debug::message("Running Tina4 jobs", TINA4_LOG_INFO);
 
 //Garbage collection
 gc_enable();
@@ -56,7 +55,11 @@ while (TRUE && !file_exists($stopFileName)) {
             $job->handle();
         }
     }
-//    $jobs->runJob('test');
+
+
+
+
+
 
 //    $processes = $service->getProcesses();
 //    sleep($service->getSleepTime());

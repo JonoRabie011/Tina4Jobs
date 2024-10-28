@@ -5,6 +5,9 @@
         "tina4stack/tina4php": "^2.0"
     },
     "scripts": {
+        "post-package-update": [
+            "php /Tina4Job/Initialize.php"
+        ],
         "tina4": "tina4",
         "tina4service": "tina4service",
         "tina4jobs": "tina4jobs",
@@ -26,7 +29,8 @@
     ],
     "autoload": {
         "files": [
-            "loadModule.php"
+            "loadModule.php",
+            "Tina4Job/Initialize.php"
         ],
         "psr-4": {
             "\\": [

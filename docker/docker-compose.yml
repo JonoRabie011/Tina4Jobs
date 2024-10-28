@@ -38,9 +38,12 @@ services:
     depends_on:
       - redis
   redis:
+    container_name: tina4_jobs_redis
     image: redis:latest
     ports:
       - 6379:6379
+    volumes:
+      - tina4-jobs-redis-data:/data
     networks:
       - internal
 
@@ -49,4 +52,6 @@ networks:
 
 volumes:
   tina4-jobs-db-data:
+  tina4-jobs-redis-data:
+
 
