@@ -6,7 +6,7 @@
     },
     "scripts": {
         "post-package-update": [
-            "php /Tina4Job/Initialize.php"
+            "php Tina4Job/Initialize.php"
         ],
         "tina4": "tina4",
         "tina4service": "tina4service",
