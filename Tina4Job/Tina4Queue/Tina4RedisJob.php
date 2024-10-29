@@ -9,12 +9,12 @@
  * @author Jonathan Rabie
  */
 
-namespace Tina4Jobs;
+namespace Tina4Jobs\Tina4Queue;
 
 use Redis;
 use RedisException;
 
-class Tina4Jobs
+class Tina4RedisJob implements Tina4QueueInterface
 {
 
 
@@ -24,9 +24,7 @@ class Tina4Jobs
      */
     private Redis $jobsConnection;
 
-    /**
-     * @throws RedisException
-     */
+
     public function __construct()
     {
         $this->jobsConnection = new Redis();
@@ -51,15 +49,6 @@ class Tina4Jobs
     }
 
     /**
-     * Returns the redis connection allowing you to interact with the jobs queue
-     * @return Redis
-     */
-    public function getJobsConnection(): Redis
-    {
-        return $this->jobsConnection;
-    }
-
-    /**
      * Add a job to the queue.
      * @param object|string $job Tina4Job as object or serialized string
      * @param string $queue The queue to add the job to
@@ -73,6 +62,28 @@ class Tina4Jobs
             echo "Failed to add job to queue: ", $e->getMessage(), "\n";
             // Implement further handling if needed, like logging
         }
+    }
+
+    /**
+     * Get the next job from the queue.
+     * @param string $queue The queue to get the job from
+     * @return object|null The next job in the queue, or null if the queue is empty
+     * @throws RedisException
+     */
+    public function getNextJob(string $queue = "default"): ?object
+    {
+        $job = $this->jobsConnection->rPop($queue);
+        return $job ? unserialize($job) : null;
+    }
+
+    public function markJobCompleted(int $jobId): void
+    {
+        // TODO: Implement markJobCompleted() method.
+    }
+
+    public function markJobFailed(int $jobId): void
+    {
+        // TODO: Implement markJobFailed() method.
     }
 
     /**

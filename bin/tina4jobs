@@ -1,12 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-use Tina4\Debug;
-use Tina4Jobs\Tina4Jobs;
-
-
-//Let see if it updates v2.0.4
-
 $replacePath = $argv[0]; //used to figure out where we're running
 global $rootPath;
 global $session; //store things here you want to reuse
@@ -25,109 +19,66 @@ if (empty($rootPath)) {
 }
 
 require_once "{$rootPath}vendor/autoload.php";
+//require_once "{$rootPath}TinaJob/Tina4Queue/Tina4JobFactory.php";
+
 define("TINA4_SUPPRESS", true);
 
-if (file_exists($rootPath . "index.php")) {
-    include_once $rootPath . "index.php";
-}
+try {
+    // Initialize the job queue using the factory, which chooses the driver based on config
+    $jobQueue = Tina4Jobs\Tina4JobFactory::createQueueDriver();
 
-$stopFileName = "{$rootPath}stop";
+    echo "Starting job processor...\n";
 
-echo "Stop file name: {$stopFileName}\n";
-if (file_exists($stopFileName)) {
-    unlink($stopFileName);
-}
+    // Flag to manage graceful shutdown
+    $shouldStop = false;
 
-\Tina4\Debug::message("Running from folder {$rootPath}", TINA4_LOG_INFO);
-\Tina4\Debug::message("Running Tina4 jobs", TINA4_LOG_INFO);
-
-//Garbage collection
-gc_enable();
-
-$jobs = new Tina4Jobs();
-$jobConnection = $jobs->getJobsConnection();
-
-while (TRUE && !file_exists($stopFileName)) {
-    $queuedName = 'default';
-
-    $job = $jobConnection->rPop($queuedName);
-    if ($job) {
-        Debug::message("Running job:: " . $queuedName);
-        $job = unserialize($job);
-        if (get_class($job) !== "__PHP_Incomplete_Class") {
-            $job->handle();
-        }
+    // Register signal handlers for graceful shutdown
+    if (function_exists('pcntl_signal')) {
+        pcntl_signal(SIGTERM, function () use (&$shouldStop) {
+            echo "Received shutdown signal, stopping...\n";
+            $shouldStop = true;
+        });
+        pcntl_signal(SIGINT, function () use (&$shouldStop) {
+            echo "Received shutdown signal, stopping...\n";
+            $shouldStop = true;
+        });
     }
 
+    // Start the job processing loop
+    while (!$shouldStop) {
+        // Dispatch any pending signals
+        if (function_exists('pcntl_signal_dispatch')) {
+            pcntl_signal_dispatch();
+        }
 
+        // Attempt to get the next job in the queue
+        $nextJob = $jobQueue->getNextJob();
 
+        if ($nextJob) {
+            echo "Processing job: " . print_r($nextJob, true) . "\n";
 
+            // Process the job here
+            // (Include your job processing logic, such as calling specific methods)
+            if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
+                $nextJob->handle();
+            }
 
+            // Mark job as completed (you’ll need to pass the actual job ID)
+            if (property_exists($nextJob, 'id')) {
+                $jobQueue->markJobCompleted($nextJob->id);
+                echo "Job completed: ID " . $nextJob->id . "\n";
+            }
+        } else {
+            // No jobs in the queue, wait before checking again
+            echo "No jobs found. Waiting...\n";
+        }
 
-//    $processes = $service->getProcesses();
-//    sleep($service->getSleepTime());
-//    if (!empty($processes)) {
-//        foreach ($processes as $id => $process) {
-//            try {
-//                if (get_class($process) !== "__PHP_Incomplete_Class") {
-//                    try {
-//                        //How to know we are not on server?
-//                        if (TINA4_DEBUG) {
-//                            \Tina4\Debug::message("Running {$process->name}", TINA4_LOG_INFO);
-//
-//                            $reflection = new \ReflectionClass(get_class($process));
-//                            $code = file_get_contents($reflection->getFileName());
-//                            $code = str_replace('<?php', '', $code);
-//                            $aliasNumber = rand(1000, 9999);
-//
-//
-//                            if (isset($settings[$process->name]) && $settings[$process->name]["hash"] == md5($code)) {
-//                                $aliasNumber = $settings[$process->name]["instance"];
-//                            } else {
-//                                $settings[$process->name]["hash"] = md5($code);
-//                                $settings[$process->name]["instance"] = $aliasNumber;
-//
-//                                //Works when name space is used
-//                                $className = explode(DIRECTORY_SEPARATOR, get_class($process));
-//                                $className = $className[count($className) - 1];
-//
-//                                $code = str_replace($className, $className . $aliasNumber, $code);
-//                                //Load new class
-//                                \Tina4\Debug::message(date("Y-m-d H:i:s") . " Reloading code for service {$className} \n{$code}", TINA4_LOG_DEBUG);
-//                                eval($code);
-//                            }
-//
-//                            eval('$runner = new ' . get_class($process) . $aliasNumber . "('{$process->name}');");
-//                            if ($runner->canRun()) {
-//                                \Tina4\Debug::message(date("Y-m-d H:i:s") . " Running {$process->name}", TINA4_LOG_DEBUG);
-//                                $runner->run();
-//                            }
-//                            unset ($runner);
-//                            $runner = null;
-//                        } else {
-//                            if ($process->canRun()) {
-//                                \Tina4\Debug::message(date("Y-m-d H:i:s") . " Running {$process->name}");
-//                                $process->run();
-//                            }
-//                            unset($process);
-//                        }
-//                    }
-//                    catch (\Exception $exception)
-//                    {
-//                        \Tina4\Debug::message("Exception happened in service:\n".$exception->getMessage());
-//                    }
-//
-//                    gc_collect_cycles();
-//                } else {
-//                    \Tina4\Debug::message("Could not load registered process, make sure it is in one of the TINA4_INCLUDE_LOCATIONS", TINA4_LOG_DEBUG);
-//                }
-//            } catch (Exception $exception) {
-//                \Tina4\Debug::message(date("Y-m-d H:i:s") . " Could not run " . $exception->getMessage(), TINA4_LOG_DEBUG);
-//            }
-//        }
-//    } else {
-//        \Tina4\Debug::message(date("Y-m-d H:i:s") . " Nothing found to run", TINA4_LOG_DEBUG);
-//    }
-    //clean up
-//    unset($service);
+        // Sleep for a defined interval before checking for the next job
+        sleep(5); // Adjust the sleep time as needed (in seconds)
+    }
+
+    echo "Job processor stopped gracefully.\n";
+
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }
