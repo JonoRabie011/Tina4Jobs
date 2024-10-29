@@ -55,7 +55,7 @@ try {
         $nextJob = $jobQueue->getNextJob();
 
         if ($nextJob) {
-            echo "Processing job: " . print_r($nextJob, true) . "\n";
+            echo "Processing job:";
 
             // Process the job here
             // (Include your job processing logic, such as calling specific methods)

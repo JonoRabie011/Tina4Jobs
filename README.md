@@ -54,7 +54,7 @@ class TestJob implements Tina4Job
 Creating a job is as simple as creating a new instance of Tina4Jobs and adding it to the jobs list.
 
 ```php
-$jobs = new \Tina4Jobs\Tina4Jobs();
+$jobs = Tina4Jobs\Tina4JobFactory::createQueueDriver();
 $jobs->addJob("test", new \Tina4Jobs\TestJob(
     [
         "surname" => "Smith", 
