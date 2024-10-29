@@ -55,13 +55,13 @@ Creating a job is as simple as creating a new instance of Tina4Jobs and adding i
 
 ```php
 $jobs = Tina4Jobs\Tina4JobFactory::createQueueDriver();
-$jobs->addJob("test", new \Tina4Jobs\TestJob(
+$jobs->addJob(new \Tina4Jobs\TestJob(
     [
         "surname" => "Smith", 
         "age" => 30, 
         "country" => "South Africa"
     ]
-));
+), "queue_name");
 ```
 
 To run the jobs there is a jobs service in the Tina4Jobs module that you can use to run the jobs.
