@@ -55,8 +55,38 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         }
 
         //Remove Docker folder
-
         self::deleteDirectory($modulePath . DIRECTORY_SEPARATOR . "docker");
+
+
+        /*
+         * Add custom scripts to composer.json
+         */
+        $composerJsonPath = $projectRoot . DIRECTORY_SEPARATOR . 'composer.json';
+
+        if (!file_exists($composerJsonPath)) {
+            echo "composer.json not found in main project directory.\n";
+            return;
+        }
+
+        // Load and decode composer.json
+        $composerJson = json_decode(file_get_contents($composerJsonPath), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo "Error decoding composer.json: " . json_last_error_msg() . "\n";
+            return;
+        }
+
+        // Modify or add custom scripts
+        $composerJson['scripts']['tina4jobs'] = "tina4jobs";
+        $composerJson['scripts']['start-jobs'] = "@tina4jobs";
+
+        // Encode and save the modified composer.json
+        file_put_contents($composerJsonPath, json_encode($composerJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        echo "Custom scripts added to composer.json\n";
+
+        // Optionally, refresh Composer's autoload
+        passthru('composer dump-autoload');
     }
 
     static private function deleteDirectory($dir) {
