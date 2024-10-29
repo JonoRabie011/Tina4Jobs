@@ -19,9 +19,11 @@ if (empty($rootPath)) {
 }
 
 require_once "{$rootPath}vendor/autoload.php";
-//require_once "{$rootPath}TinaJob/Tina4Queue/Tina4JobFactory.php";
-
 define("TINA4_SUPPRESS", true);
+
+if (file_exists($rootPath . "index.php")) {
+    include_once $rootPath . "index.php";
+}
 
 try {
     // Initialize the job queue using the factory, which chooses the driver based on config

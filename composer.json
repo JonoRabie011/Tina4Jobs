@@ -2,6 +2,7 @@
     "name": "tina4components/tina4jobsmodule",
     "description": "This is a package that will allows you to add a redis jobs queue to any tin4 project",
     "type": "composer-plugin",
+    "license": "MIT",
     "require": {
         "tina4stack/tina4php": "^2.0",
         "composer-plugin-api": "^2.0",
