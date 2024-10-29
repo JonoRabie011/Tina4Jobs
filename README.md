@@ -21,8 +21,8 @@ There are two variables that you need to set in your .env file
   REDIS_PORT: <ports to your redis server: Default usually on redis is :6379>
 ```
 
-When creating a job you need to create a class that extends the Job class and implement the run method. 
-The run method is the method that will be called when the job is run.
+When creating a job you need to create a class that implements the `Tina4Job` interface and implement the `handle()` method. 
+The `handle()` method is the method that will be called when the job is run.
 
 The following is an example of a job that writes a user to a file, All job classes need to implement the Tina4Job interface.
 
