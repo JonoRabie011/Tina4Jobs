@@ -57,10 +57,18 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         //Remove Docker folder
         self::deleteDirectory($modulePath . DIRECTORY_SEPARATOR . "docker");
 
+        // Add custom Composer scripts
+        self::addCustomComposerScripts($projectRoot);
 
-        /*
-         * Add custom scripts to composer.json
-         */
+    }
+
+    /**
+     * Add custom Composer scripts to the main project's composer.json
+     * @param $projectRoot
+     * @return void
+     */
+    static private function addCustomComposerScripts($projectRoot): void
+    {
         $composerJsonPath = $projectRoot . DIRECTORY_SEPARATOR . 'composer.json';
 
         if (!file_exists($composerJsonPath)) {
@@ -89,6 +97,11 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         passthru('composer dump-autoload');
     }
 
+    /**
+     * Recursively delete a directory
+     * @param $dir
+     * @return bool
+     */
     static private function deleteDirectory($dir) {
         if (!is_dir($dir)) {
             return false;
