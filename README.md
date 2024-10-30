@@ -1,6 +1,5 @@
 ## Welcome to the Tina4 Jobs Module
 
-This module is designed to allow you to create and manage jobs in your application. It is designed to be a simple way to manage jobs and to be able to run them on a schedule.
 
 This package uses a redis server to manage the jobs and to run them on a schedule. It is designed to be a simple way to manage jobs and to be able to run them on a schedule.
 
