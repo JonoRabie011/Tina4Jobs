@@ -63,6 +63,9 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         // Check for environment variables
         self::checkEnvironmentVariables($projectRoot);
 
+        // Optionally, refresh Composer's autoload
+        passthru('composer dump-autoload');
+
     }
 
     /**
@@ -95,19 +98,17 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         file_put_contents($composerJsonPath, json_encode($composerJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         echo "Custom scripts added to composer.json\n";
-
-        // Optionally, refresh Composer's autoload
-        passthru('composer dump-autoload');
     }
 
     /**
      * Recursively delete a directory
      * @param $dir
-     * @return bool
+     * @return void
      */
-    static private function deleteDirectory($dir) {
+    static private function deleteDirectory($dir): void
+    {
         if (!is_dir($dir)) {
-            return false;
+            return;
         }
 
         // Open the directory and loop through its contents
@@ -120,7 +121,7 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 
             if (is_dir($filePath)) {
                 // Recursively delete subdirectory
-                deleteDirectory($filePath);
+                self::deleteDirectory($filePath);
             } else {
                 // Delete file
                 unlink($filePath);
@@ -128,22 +129,29 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         }
 
         // Remove the now-empty directory
-        return rmdir($dir);
+        rmdir($dir);
     }
 
 
-    static private function checkEnvironmentVariables($projectRoot): void
+    /**
+     * Check for required environment variables and add them if missing
+     * @param $projectRoot string Main project root directory
+     * @return void
+     */
+    static private function checkEnvironmentVariables(string $projectRoot): void
     {
         $envPath = $projectRoot . DIRECTORY_SEPARATOR . '.env';
 
+        // List of required environment variables key-value pairs
         $keys = [
             "REDIS_HOST" => "localhost",
             "REDIS_PORT" => "6379",
         ];
 
-
+        // Check if .env file exists else create it
         if(file_exists($envPath)) {
 
+            // Read existing keys from .env
             $existingKeys = self::readEnv($envPath);
 
             foreach ($keys as $key => $value) {
@@ -156,9 +164,6 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
                 self::writeToEnv($envPath, $key, $value);
             }
         }
-
-        // Optionally, refresh Composer's autoload
-        passthru('composer dump-autoload');
     }
 
 
@@ -174,6 +179,7 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
 
+            // Skip comments, empty lines, and lines that don't contain the key
             if (str_starts_with(trim($line), '#') || str_starts_with(trim($line), '[') || !str_contains(trim($line), 'REDIS')) {
                 continue;
             }
