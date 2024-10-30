@@ -1,2 +1,6 @@
 /vendor/
 /.env
+/bin/tina4
+/bin/tina4service
+/.idea
+/log/

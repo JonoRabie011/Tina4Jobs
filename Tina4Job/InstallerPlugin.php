@@ -60,6 +60,9 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         // Add custom Composer scripts
         self::addCustomComposerScripts($projectRoot);
 
+        // Check for environment variables
+        self::checkEnvironmentVariables($projectRoot);
+
     }
 
     /**
@@ -126,5 +129,73 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 
         // Remove the now-empty directory
         return rmdir($dir);
+    }
+
+
+    static private function checkEnvironmentVariables($projectRoot): void
+    {
+        $envPath = $projectRoot . DIRECTORY_SEPARATOR . '.env';
+
+        $keys = [
+            "SSO_API_URL" => "sso.poseidontechnologies.co.za",
+            "SSO_TOKEN" => "token",
+            "SSO_REDIRECT_URL" => "/",
+            "SSO_BASE_TWIG_FILE" => "tina4Login-base.twig"
+        ];
+
+
+        if(file_exists($envPath)) {
+
+            $existingKeys = self::readEnv($envPath);
+
+            foreach ($keys as $key => $value) {
+                if(!in_array($key, $existingKeys)) {
+                    self::writeToEnv($envPath, $key, $value);
+                }
+            }
+        } else {
+            foreach ($keys as $key => $value) {
+                self::writeToEnv($envPath, $key, $value);
+            }
+        }
+
+        // Optionally, refresh Composer's autoload
+        passthru('composer dump-autoload');
+    }
+
+
+    /**
+     * Function to read current .env
+     * @param $path
+     * @return array
+     */
+    private static function readEnv($path): array
+    {
+        $existingKeys = [];
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+
+            if (str_starts_with(trim($line), '#') || str_starts_with(trim($line), '[') || !str_contains(trim($line), 'SSO')) {
+                continue;
+            }
+
+            list($name, $value) = explode('=', $line, 2);
+            $existingKeys[] = trim($name);
+        }
+
+        return $existingKeys;
+    }
+
+    /**
+     * Function to set up your ENV after install
+     * @param $env
+     * @param $key
+     * @param $data
+     * @return void
+     */
+    private static function writeToEnv($env, $key, $data): void
+    {
+        file_put_contents($env, "\n" . $key . "=" . $data, FILE_APPEND);
     }
 }
