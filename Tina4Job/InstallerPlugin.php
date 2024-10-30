@@ -26,6 +26,10 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         file_exists($projectRoot . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") ? unlink($projectRoot . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs") : "";
     }
 
+    /**
+     * Subscribe to Composer events
+     * @return array
+     */
     public static function getSubscribedEvents()
     {
         return [
@@ -34,6 +38,10 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         ];
     }
 
+    /**
+     * Initialize the plugin
+     * @param Event $event
+     */
     public static function initialize(Event $event)
     {
 
