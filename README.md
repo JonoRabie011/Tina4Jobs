@@ -34,6 +34,7 @@ use Tina4Jobs\Tina4Job;
 
 class TestJob implements Tina4Job
 {
+    use Tina4Queueable; // This is a trait that is used to make the job queueable
 
     private $user;
 

@@ -4,3 +4,4 @@
 /bin/tina4service
 /.idea
 /log/
+/routes/*.php

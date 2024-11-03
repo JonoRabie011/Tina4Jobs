@@ -9,8 +9,8 @@ class Tina4JobFactory
 {
     public static function createQueueDriver(): Tina4DatabaseJob|Tina4RedisJob
     {
-//        $driver = $_ENV['QUEUE_DRIVER'] ?? 'database';
-        $driver = $_ENV['QUEUE_DRIVER'] ?? 'redis';
+        $driver = $_ENV['QUEUE_DRIVER'] ?? 'database';
+//        $driver = $_ENV['QUEUE_DRIVER'] ?? 'redis';
 
         return match ($driver) {
             'redis' => new Tina4RedisJob(),

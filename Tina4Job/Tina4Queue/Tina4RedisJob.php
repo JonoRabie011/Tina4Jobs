@@ -11,12 +11,13 @@
 
 namespace Tina4Jobs\Tina4Queue;
 
+use Psr\Cache\InvalidArgumentException;
 use Redis;
 use RedisException;
+use Tina4\Utilities;
 
 class Tina4RedisJob implements Tina4QueueInterface
 {
-
 
     /**
      * The redis connection to the jobs queue
@@ -81,9 +82,26 @@ class Tina4RedisJob implements Tina4QueueInterface
         // TODO: Implement markJobCompleted() method.
     }
 
-    public function markJobFailed(int $jobId): void
+    /**
+     * Add failed job to the failed jobs table
+     * @param string $exception
+     * @param int $jobId
+     * @return void
+     */
+    public function markJobFailed(string $exception, int $jobId): void
     {
-        // TODO: Implement markJobFailed() method.
+        try {
+            $failedJob = new \FailedJob();
+            $failedJob->uuid = (new Utilities())->getGUID();
+            $failedJob->connection = Tina4RedisJob::class;
+            $failedJob->queue = "default";
+            $failedJob->payload = 'Add payload here';
+            $failedJob->exception = $exception;
+            $failedJob->failed_at = date("Y-m-d H:i:s");
+            $failedJob->save();
+        } catch (InvalidArgumentException|\Exception $e) {
+            echo "\n\n\n\nFailed to mark job as failed: ", $e->getMessage(), "\n";
+        }
     }
 
     /**

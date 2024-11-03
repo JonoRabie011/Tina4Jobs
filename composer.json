@@ -6,7 +6,8 @@
     "require": {
         "tina4stack/tina4php": "^2.0",
         "composer-plugin-api": "^2.0",
-        "ext-redis": "*"
+        "ext-redis": "*",
+        "tina4stack/tina4php-sqlite3": "^2.0"
     },
     "scripts": {
         "tina4": "tina4",

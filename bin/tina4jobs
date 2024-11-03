@@ -59,17 +59,23 @@ try {
         if ($nextJob) {
             echo "Processing job:";
 
-            // Process the job here
-            // (Include your job processing logic, such as calling specific methods)
-            if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
-                $nextJob->handle();
+            try {
+                // Process the job here
+                if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
+//                    $nextJob->handle();
+                    throw new Exception("Job not found");
+                }
+
+                // Mark job as completed (you’ll need to pass the actual job ID)
+                if (property_exists($nextJob, 'jobId') && !empty($nextJob->jobId)) {
+                    $jobQueue->markJobCompleted($nextJob->jobId);
+                    echo "Job completed: ID " . $nextJob->jobId . "\n";
+                }
+            } catch (Exception $e) {
+                echo "Job failed: " . serialize($e) . "\n";
+                $jobQueue->markJobFailed(serialize($e), $nextJob->jobId ?? -1);
             }
 
-            // Mark job as completed (you’ll need to pass the actual job ID)
-            if (property_exists($nextJob, 'id')) {
-                $jobQueue->markJobCompleted($nextJob->id);
-                echo "Job completed: ID " . $nextJob->id . "\n";
-            }
         } else {
             // No jobs in the queue, wait before checking again
             echo "No jobs found. Waiting...\n";

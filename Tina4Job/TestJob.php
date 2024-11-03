@@ -4,6 +4,7 @@ namespace Tina4Jobs;
 
 class TestJob implements Tina4Job
 {
+    use Tina4Queueable;
 
     private $user;
 

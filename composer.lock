@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9e663051f1ccdabf67c8a5e0919a9982",
+    "content-hash": "1225ab3a850054a6d0982a428aa5a84b",
     "packages": [
         {
             "name": "cesargb/php-log-rotation",
@@ -1174,6 +1174,51 @@
             "time": "2021-07-21T10:35:18+00:00"
         },
         {
+            "name": "tina4stack/tina4php-sqlite3",
+            "version": "v2.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tina4stack/tina4php-sqlite3.git",
+                "reference": "bf806f66da973b440feb02d65eb8d30b085e3879"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tina4stack/tina4php-sqlite3/zipball/bf806f66da973b440feb02d65eb8d30b085e3879",
+                "reference": "bf806f66da973b440feb02d65eb8d30b085e3879",
+                "shasum": ""
+            },
+            "require": {
+                "ext-sqlite3": "*",
+                "tina4stack/tina4php-database": "^2.0"
+            },
+            "require-dev": {
+                "overtrue/phplint": "^2.0",
+                "phpunit/phpunit": "^9",
+                "roave/security-advisories": "dev-latest"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Tina4\\": [
+                        "Tina4/"
+                    ]
+                },
+                "classmap": [
+                    "Tina4/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Tina4 PHP Sqlite3 Database Driver",
+            "support": {
+                "issues": "https://github.com/tina4stack/tina4php-sqlite3/issues",
+                "source": "https://github.com/tina4stack/tina4php-sqlite3/tree/v2.0.4"
+            },
+            "time": "2023-06-10T16:22:03+00:00"
+        },
+        {
             "name": "twig/twig",
             "version": "v3.14.0",
             "source": {
@@ -1260,7 +1305,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "composer-plugin-api": "^2.0"
+        "composer-plugin-api": "^2.0",
+        "ext-redis": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.3.0"
