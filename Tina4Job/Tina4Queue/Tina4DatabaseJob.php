@@ -41,14 +41,22 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
         return null;
     }
 
+
     public function markJobCompleted(int $jobId): void
     {
-        // TODO: Implement markJobCompleted() method.
         $job = new Job();
         $job->id = $jobId;
         $job->delete();
     }
 
+    /**
+     * This function will add the failed job to the failed jobs table
+     * and remove the job from the jobs table
+     * @param string $exception
+     * @param int $jobId
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function markJobFailed(string $exception, int $jobId): void
     {
         $failedJob = new \FailedJob();
