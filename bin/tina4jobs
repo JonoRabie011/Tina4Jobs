@@ -62,8 +62,7 @@ try {
             try {
                 // Process the job here
                 if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
-//                    $nextJob->handle();
-                    throw new Exception("Job not found");
+                    $nextJob->handle();
                 }
 
                 // Mark job as completed (you’ll need to pass the actual job ID)
