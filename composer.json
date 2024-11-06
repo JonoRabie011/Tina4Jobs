@@ -49,5 +49,8 @@
     },
     "config": {
         "process-timeout": 0
+    },
+    "provide" : {
+        "ext-redis": "*"
     }
 }
