@@ -2,6 +2,7 @@
 
 use Tina4\Module;
 
+global $DBA;
 Module::addModule("Tina4 Jobs Module", "0.0.1", "Tina4JobsModule", function(\Tina4\Config $config) {
     //(new Content())->addConfigMethods($config);
 });
