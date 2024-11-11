@@ -69,3 +69,42 @@ To run the jobs there is a jobs service in the Tina4Jobs module that you can use
 ```bash
 composer start-jobs
 ```
+
+## Running jobs on linux server as a service
+
+To run the jobs on a linux server you can use the following command
+
+Step 1: `cd /etc/systemd/system`
+
+Step 2: Create a new service file `nano tina4jobs.service` and add the following content
+
+```
+[Unit]
+Description=Tina4Jobs Service
+After=mysqld.service
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=integration
+WorkingDirectory=<path to your project directory>
+ExecStart=php bin/tina4jobs
+[Install]
+WantedBy=multi-user.target
+```
+
+Step 3: Reload the systemd daemon `systemctl daemon-reload`
+
+Step 4: Start the service `systemctl start tina4jobs.service`
+
+Step 5: Check the status of the service `systemctl status tina4jobs.service`
+
+Step 6: Enable the service to start on boot `systemctl enable tina4jobs.service`
+
+Notes:
+- You can change the user to the user that you want to run the service as.
+- You can change the path to the project directory where the `bin/tina4jobs` file is located.
+- You can change the description of the service to whatever you want.
+- You can change the name of the service to whatever you want.
+- To stop the service you can use `systemctl stop tina4jobs.service`

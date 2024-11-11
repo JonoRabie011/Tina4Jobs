@@ -35,7 +35,7 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = new Job();
-        if($currentJob = $job->load("id > 0")) {
+        if($currentJob = $job->load("id > 0 and queue = ? and availableAt < ?", [$queue, time()])) {
             $currentJobUnSerialized = unserialize(convert_uudecode($currentJob->payload));
             /*
              * Set the job ID on the job object
