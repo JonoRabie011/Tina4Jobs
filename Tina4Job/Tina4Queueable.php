@@ -10,16 +10,11 @@ Trait Tina4Queueable
      */
     private int $jobId;
 
-    /**
-     * The number of times the job may be attempted before it is marked as failed
-     * @var int
-     */
-    public int $attempts = 1;
+    public int $attempt;
 
-    /**
-     * @var int The number of seconds before a job needs to be attempted again
-     */
-    public int $timeBetweenAttempts = 0;
+    public int $attempts;
+
+    public int $timeBetweenAttempts;
 
 
     public function setJobId($jobId)
@@ -30,6 +25,43 @@ Trait Tina4Queueable
     public function getJobId()
     {
         return $this->jobId;
+    }
+
+    /**
+     * Get allowed attempts for a job
+     * @return int
+     */
+    public function getAttempts(): int
+    {
+        if(empty($this->attempts)) {
+            $this->attempts = 1;
+        }
+
+        return $this->attempts;
+    }
+
+    public function attempt(): bool {
+        $attempts = $this->getAttempts();
+
+        if(empty($this->attempt)) {
+            $this->attempt = 1;
+        }
+
+        if(($this->attempt + 1) > $attempts) {
+            return false;
+        }
+
+        $this->attempt++;
+
+        return true;
+    }
+
+    public function getAttempt() {
+        if(empty($this->attempt)) {
+            $this->attempt = 1;
+        }
+
+        return $this->attempt;
     }
 
 }

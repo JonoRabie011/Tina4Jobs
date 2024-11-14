@@ -6,6 +6,9 @@ class TestJob implements Tina4Job
 {
     use Tina4Queueable;
 
+    public int $attempts = 6;
+    public int $timeBetweenAttempts = 20;
+
     private $user;
 
     public function __construct($payload = [])

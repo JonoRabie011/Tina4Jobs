@@ -14,15 +14,16 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     {
         try {
             $availableAt = time();
+            $attempt = 1;
 
-            if(property_exists($job, 'attempts') && $job->attempts > 0) {
-                $availableAt = time() + $job->timeBetweenAttempts;
+            if(property_exists($job, 'attempt')) {
+                $attempt = $job->getAttempt();
             }
 
             $newJob = new Job();
             $newJob->queue = $queue;
             $newJob->payload = convert_uuencode(serialize($job));
-            $newJob->attempts = $job->attempts;
+            $newJob->attempts = $attempt;
             $newJob->reservedAt = null;
             $newJob->availableAt = $availableAt;
             $newJob->createdAt = time();
@@ -35,7 +36,7 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = new Job();
-        if($currentJob = $job->load("id > 0 and queue = ? and availableAt < ?", [$queue, time()])) {
+        if($currentJob = $job->load("id > 0 and queue = ? and available_at < ?", [$queue, time()])) {
             $currentJobUnSerialized = unserialize(convert_uudecode($currentJob->payload));
             /*
              * Set the job ID on the job object
@@ -78,7 +79,7 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
         $failedJob->queue = "default";
         $failedJob->payload = 'Add payload here';
         $failedJob->exception = $exception;
-        $failedJob->failed_at = date("Y-m-d H:i:s");
+        $failedJob->failedAt = date("Y-m-d H:i:s");
 
         if ($failedJob->save()) {
             $job = new Job();
