@@ -2,6 +2,8 @@
 
 namespace Tina4Jobs;
 
+use Tina4Jobs\Tina4Queue\Tina4JobFactory;
+
 class Tina4JobQueue
 {
 

@@ -1,9 +1,6 @@
 <?php
 
-namespace Tina4Jobs;
-
-use Tina4Jobs\Tina4Queue\Tina4DatabaseJob;
-use Tina4Jobs\Tina4Queue\Tina4RedisJob;
+namespace Tina4Jobs\Tina4Queue;
 
 class Tina4JobFactory
 {
