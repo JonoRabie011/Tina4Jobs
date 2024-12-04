@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+use Tina4Jobs\Tina4Queue\Tina4JobFactory;
+
 $replacePath = $argv[0]; //used to figure out where we're running
 global $rootPath;
 global $session; //store things here you want to reuse
@@ -27,7 +29,7 @@ if (file_exists($rootPath . "index.php")) {
 
 try {
     // Initialize the job queue using the factory, which chooses the driver based on config
-    $jobQueue = Tina4Jobs\Tina4JobFactory::createQueueDriver();
+    $jobQueue = Tina4JobFactory::createQueueDriver();
 
     echo "Starting job processor...\n";
 
@@ -66,13 +68,23 @@ try {
                 }
 
                 // Mark job as completed (you’ll need to pass the actual job ID)
-                if (property_exists($nextJob, 'jobId') && !empty($nextJob->jobId)) {
-                    $jobQueue->markJobCompleted($nextJob->jobId);
-                    echo "Job completed: ID " . $nextJob->jobId . "\n";
+                if (property_exists($nextJob, 'jobId') && !empty($nextJob->getJobId())) {
+                    $jobQueue->markJobCompleted($nextJob->getJobId());
+                    echo "Job completed: ID " . $nextJob->getJobId() . "\n";
                 }
             } catch (Exception $e) {
                 echo "Job failed: " . serialize($e) . "\n";
-                $jobQueue->markJobFailed(serialize($e), $nextJob->jobId ?? -1);
+
+                if(property_exists($nextJob, 'attempts')) {
+                    if($nextJob->attempt()) {
+                        $jobQueue->addJob($nextJob);
+                    } else {
+                        $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1);
+                    }
+                } else {
+                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1);
+                }
+
             }
 
         } else {
