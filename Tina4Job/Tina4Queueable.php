@@ -16,7 +16,6 @@ Trait Tina4Queueable
 
     public int $timeBetweenAttempts;
 
-
     public function setJobId($jobId)
     {
         $this->jobId = $jobId;
