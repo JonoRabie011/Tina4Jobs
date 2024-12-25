@@ -7,6 +7,6 @@ RUN pecl install redis
 RUN docker-php-ext-enable redis
 
 WORKDIR /var/www/html
-EXPOSE 7777
+EXPOSE 9800
 CMD ["bash", "./docker/start-container.sh"]
 #CMD ["sh", "-c", "while :; do echo 'Running'; sleep 3600; done"]

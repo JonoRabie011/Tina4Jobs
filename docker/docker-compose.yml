@@ -17,7 +17,7 @@ services:
     environment:
       <<: *tina4-jobs-common-variables
     ports:
-      - "9000:7145"
+      - "9800:7145"
     volumes:
       - ../:/var/www/html
     networks:
