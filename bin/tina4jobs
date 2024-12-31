@@ -27,6 +27,8 @@ if (file_exists($rootPath . "index.php")) {
     include_once $rootPath . "index.php";
 }
 
+//Garbage collection
+gc_enable();
 try {
     // Initialize the job queue using the factory, which chooses the driver based on config
     $jobQueue = Tina4JobFactory::createQueueDriver();
@@ -86,6 +88,9 @@ try {
                 }
 
             }
+
+            // Perform garbage collection to free up memory
+            gc_collect_cycles();
 
         } else {
             // No jobs in the queue, wait before checking again
