@@ -1,5 +1,10 @@
 <?php
 
+
+/**
+ * @author Jonathan Rabie
+ */
+
 namespace Tina4Jobs\Tina4Queue;
 
 use Job;
@@ -18,13 +23,17 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
 
             if(property_exists($job, 'attempt')) {
                 $attempt = $job->getAttempt();
+
+                if($attempt > 1) {
+                    $availableAt = time() + $job->getTimeBetweenAttempts();
+                }
             }
 
             $newJob = new Job();
             $newJob->queue = $queue;
             $newJob->payload = convert_uuencode(serialize($job));
             $newJob->attempts = $attempt;
-            $newJob->reservedAt = null;
+            $newJob->reservedAt = -1;
             $newJob->availableAt = $availableAt;
             $newJob->createdAt = time();
             $newJob->save();
@@ -36,8 +45,11 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = new Job();
-        if($currentJob = $job->load("id > 0 and queue = ? and available_at < ?", [$queue, time()])) {
+        if($currentJob = $job->load("reserved_at < 0 and id > 0 and queue = ? and available_at < ?", [$queue, time()])) {
             $currentJobUnSerialized = unserialize(convert_uudecode($currentJob->payload));
+
+            $currentJob->reservedAt = time();
+            $currentJob->save();
             /*
              * Set the job ID on the job object
              * This jobid is used to mark the job as completed or failed
@@ -66,8 +78,8 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     /**
      * This function will add the failed job to the failed jobs table
      * and remove the job from the jobs table
-     * @param string $exception
-     * @param int $jobId
+     * @param string $exception The exception message
+     * @param int $jobId The job id as stored in the jobs table
      * @return void
      * @throws InvalidArgumentException
      */
@@ -85,6 +97,24 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
             $job = new Job();
             $job->id = $jobId;
             $job->delete();
+        }
+    }
+
+
+    /**
+     * This function will release the job back to the queue
+     * @param object|string $job The job to release
+     * @param int $timeBetween The time between attempts
+     * @return void
+     */
+    public function releaseJob(object|string $job, int $timeBetween): void
+    {
+        if($savedJob = (new Job())->load("id = ?", [$job->getJobId()])) {
+            $savedJob->payload = convert_uuencode(serialize($job));
+            $savedJob->attempts = $job->getAttempt();
+            $savedJob->availableAt = time() + $timeBetween;
+            $savedJob->reservedAt = -1;
+            $savedJob->save();
         }
     }
 }

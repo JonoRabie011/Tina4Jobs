@@ -104,6 +104,14 @@ class Tina4RedisJob implements Tina4QueueInterface
         }
     }
 
+
+    public function releaseJob(object|string $job, int $timeBetween): void
+    {
+        sleep($timeBetween);
+
+        $this->addJob($job);
+    }
+
     /**
      * Close the Redis connection when the instance is destroyed.
      * @throws RedisException

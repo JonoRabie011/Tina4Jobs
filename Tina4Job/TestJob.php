@@ -6,8 +6,8 @@ class TestJob implements Tina4Job
 {
     use Tina4Queueable;
 
-    public int $attempts = 6;
-    public int $timeBetweenAttempts = 20;
+    protected int $attempts = 2;
+    protected int $timeBetweenAttempts = 2;
 
     private $user;
 
@@ -19,6 +19,10 @@ class TestJob implements Tina4Job
 
     public function handle(): void
     {
+        if($this->getAttempt()  <= 1) {
+            throw new \Exception("Job failed");
+        }
+
         file_put_contents("test.txt", json_encode($this->user) . "\n\n", FILE_APPEND);
     }
 }

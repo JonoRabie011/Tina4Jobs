@@ -11,6 +11,7 @@ class Tina4JobFactory
 
         return match ($driver) {
             'redis' => new Tina4RedisJob(),
+            'kafka' => new Tina4KafkaJob(),
             default => new Tina4DatabaseJob(),
         };
     }

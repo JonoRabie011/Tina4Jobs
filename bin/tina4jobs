@@ -61,7 +61,7 @@ try {
         $nextJob = $jobQueue->getNextJob();
 
         if ($nextJob) {
-            echo "Processing job:";
+            echo "Processing job: " . get_class($nextJob) . "\n";
 
             try {
                 // Process the job here
@@ -75,11 +75,11 @@ try {
                     echo "Job completed: ID " . $nextJob->getJobId() . "\n";
                 }
             } catch (Exception $e) {
-                echo "Job failed: " . serialize($e) . "\n";
+//                echo "Job failed: " . serialize($e) . "\n";
 
                 if(property_exists($nextJob, 'attempts')) {
                     if($nextJob->attempt()) {
-                        $jobQueue->addJob($nextJob);
+                        $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts());
                     } else {
                         $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1);
                     }

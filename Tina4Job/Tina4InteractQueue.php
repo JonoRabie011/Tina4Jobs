@@ -4,9 +4,9 @@ namespace Tina4Jobs;
 
 Trait Tina4InteractQueue
 {
-    public $job;
+    protected int $timeBetweenAttempts = 20;
 
-    function release($delay)
+    function release()
     {
         //@TODO Create function that will release a job back into the queue for later retry
     }

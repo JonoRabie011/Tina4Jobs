@@ -10,11 +10,9 @@ Trait Tina4Queueable
      */
     private int $jobId;
 
-    public int $attempt;
+    private int $attempt;
 
-    public int $attempts;
-
-    public int $timeBetweenAttempts;
+    protected int $attempts = 2;
 
     public function setJobId($jobId)
     {
@@ -39,6 +37,10 @@ Trait Tina4Queueable
         return $this->attempts;
     }
 
+    /**
+     * Check if the job can be attempted again
+     * @return bool
+     */
     public function attempt(): bool {
         $attempts = $this->getAttempts();
 
@@ -55,12 +57,25 @@ Trait Tina4Queueable
         return true;
     }
 
-    public function getAttempt() {
-        if(empty($this->attempt)) {
+    /**
+     * Get the current attempt number
+     * @return int
+     */
+    public function getAttempt(): int
+    {
+        if (empty($this->attempt)) {
             $this->attempt = 1;
         }
 
         return $this->attempt;
     }
 
+    public function getTimeBetweenAttempts(): int
+    {
+        if(empty($this->timeBetweenAttempts)) {
+            $this->timeBetweenAttempts = 20;
+        }
+
+        return $this->timeBetweenAttempts;
+    }
 }
