@@ -22,6 +22,7 @@ services:
       - ../:/var/www/html
     networks:
       - internal
+
   jobs:
     container_name: tina4_jobs_jobs
     build:
@@ -35,6 +36,31 @@ services:
       - internal
     depends_on:
       - redis
+      - kafka
+
+  kafka:
+    container_name: tina4_jobs_kafka
+    image: wurstmeister/kafka:latest
+    environment:
+      KAFKA_ADVERTISED_LISTENER: INSIDE_KAFKA:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_NAME: INSIDE_KAFKA
+      KAFKA_LISTENER_PORT: 9093
+      KAFKA_LISTENER_INTERNAL: INSIDE_KAFKA
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_NAME_INTERNAL: INSIDE_KAFKA
+    depends_on:
+      - zookeeper
+    networks:
+      - internal
+
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    networks:
+      - internal
+
+
   redis:
     container_name: tina4_jobs_redis
     image: redis:latest
@@ -47,6 +73,7 @@ services:
 
 networks:
   internal:
+    driver: bridge
 
 volumes:
   tina4-jobs-db-data:
