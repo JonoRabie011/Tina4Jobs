@@ -51,10 +51,5 @@
     },
     "config": {
         "process-timeout": 0
-    },
-    "provide" : {
-        "ext-sqlite3": "*",
-        "ext-redis": "*",
-        "ext-rdkafka": "*"
     }
 }
