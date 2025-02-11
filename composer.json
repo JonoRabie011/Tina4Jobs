@@ -6,10 +6,9 @@
     "require": {
         "tina4stack/tina4php": "^2.0",
         "composer-plugin-api": "^2.0",
-        "ext-redis": "*",
-        "ext-rdkafka": "*",
         "tina4stack/tina4php-sqlite3": "^2.0",
-        "php-kafka/php-simple-kafka-client": "^1.0"
+        "ext-redis": "*",
+        "ext-sqlite3": "*"
     },
     "scripts": {
         "tina4": "tina4",
