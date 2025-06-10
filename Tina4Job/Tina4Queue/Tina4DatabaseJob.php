@@ -106,6 +106,7 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
      * @param object|string $job The job to release
      * @param int $timeBetween The time between attempts
      * @return void
+     * @throws InvalidArgumentException
      */
     public function releaseJob(object|string $job, int $timeBetween): void
     {

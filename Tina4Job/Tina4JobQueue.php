@@ -18,7 +18,7 @@ class Tina4JobQueue
      * @param string $queue The queue to add the job to
      * @return void
      */
-    static function push(object|array $jobs, string $queue = "default"): void
+    protected static function push(object|array $jobs, string $queue = "default"): void
     {
         if (is_array($jobs)) {
             foreach ($jobs as $job) {
