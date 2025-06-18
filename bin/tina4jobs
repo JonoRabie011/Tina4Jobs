@@ -75,16 +75,14 @@ try {
                     echo "Job completed: ID " . $nextJob->getJobId() . "\n";
                 }
             } catch (Exception $e) {
-//                echo "Job failed: " . serialize($e) . "\n";
-
                 if(property_exists($nextJob, 'attempts')) {
                     if($nextJob->attempt()) {
                         $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts());
                     } else {
-                        $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1);
+                        $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)));
                     }
                 } else {
-                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1);
+                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)));
                 }
 
             }

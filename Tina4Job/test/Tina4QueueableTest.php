@@ -20,16 +20,6 @@ class Tina4QueueableTest extends TestCase
         };
     }
 
-    /**
-     * Helper function to print colorful output
-     */
-    protected function printResult(string $testName, bool $passed): void
-    {
-        $passText = $passed ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m";
-        echo sprintf("%-40s %s\n", $testName, $passText);
-        echo "---------------------------------------------\n";
-    }
-
     public function testJobIdGetterAndSetter()
     {
         $this->printHeader("Testing JobId getter and setter");

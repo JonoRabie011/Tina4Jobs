@@ -19,6 +19,7 @@ interface Tina4QueueInterface
      */
     public function getNextJob(string $queue = "default"): ?object;
     public function markJobCompleted(int $jobId): void;
-    public function markJobFailed(string $exception, int $jobId): void;
-    public function releaseJob(object|string $job, int $timeBetween): void;
+    public function markJobFailed(string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"): void;
+    public function releaseJob(object|string $job, int $timeBetween,string $queue = "default"): void;
+    public function requeueFailedJob(String $uuid): void;
 }

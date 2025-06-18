@@ -80,16 +80,20 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
      * and remove the job from the jobs table
      * @param string $exception The exception message
      * @param int $jobId The job id as stored in the jobs table
+     * @param string $payload The payload of the job that failed, default is "No Payload"
+     * @param string $queue The queue the job was in, default is "default"
      * @return void
      * @throws InvalidArgumentException
      */
-    public function markJobFailed(string $exception, int $jobId): void
+    public function markJobFailed(
+        string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"
+    ): void
     {
         $failedJob = new \FailedJob();
         $failedJob->uuid = (new Utilities())->getGUID();
         $failedJob->connection = Tina4RedisJob::class;
-        $failedJob->queue = "default";
-        $failedJob->payload = 'Add payload here';
+        $failedJob->queue = $queue;
+        $failedJob->payload = $payload;
         $failedJob->exception = $exception;
         $failedJob->failedAt = date("Y-m-d H:i:s");
 
@@ -105,17 +109,31 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
      * This function will release the job back to the queue
      * @param object|string $job The job to release
      * @param int $timeBetween The time between attempts
+     * @param string $queue The queue to release the job to, default is "default"
      * @return void
      * @throws InvalidArgumentException
      */
-    public function releaseJob(object|string $job, int $timeBetween): void
+    public function releaseJob(object|string $job, int $timeBetween, string $queue="default"): void
     {
         if($savedJob = (new Job())->load("id = ?", [$job->getJobId()])) {
+            $savedJob->queue = $queue;
             $savedJob->payload = convert_uuencode(serialize($job));
             $savedJob->attempts = $job->getAttempt();
             $savedJob->availableAt = time() + $timeBetween;
             $savedJob->reservedAt = -1;
             $savedJob->save();
+        }
+    }
+
+    public function requeueFailedJob(string $uuid): void
+    {
+        if($failedJob = (new \FailedJob())->load("uuid = ?", [$uuid])) {
+            if($failedJob->payload != 'No Payload') {
+                if ($jobPayload = unserialize(convert_uudecode($failedJob->payload))) {
+                    $this->addJob($jobPayload, $failedJob->queue);
+                    $failedJob->delete();
+                }
+            }
         }
     }
 }

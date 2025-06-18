@@ -86,16 +86,18 @@ class Tina4RedisJob implements Tina4QueueInterface
      * Add failed job to the failed jobs table
      * @param string $exception
      * @param int $jobId
+     * @param string $payload
+     * @param string $queue
      * @return void
      */
-    public function markJobFailed(string $exception, int $jobId): void
+    public function markJobFailed(string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"): void
     {
         try {
             $failedJob = new \FailedJob();
             $failedJob->uuid = (new Utilities())->getGUID();
             $failedJob->connection = Tina4RedisJob::class;
-            $failedJob->queue = "default";
-            $failedJob->payload = 'Add payload here';
+            $failedJob->queue = $queue;
+            $failedJob->payload = $payload;
             $failedJob->exception = $exception;
             $failedJob->failed_at = date("Y-m-d H:i:s");
             $failedJob->save();
@@ -105,11 +107,11 @@ class Tina4RedisJob implements Tina4QueueInterface
     }
 
 
-    public function releaseJob(object|string $job, int $timeBetween): void
+    public function releaseJob(object|string $job, int $timeBetween, string $queue = "default"): void
     {
         sleep($timeBetween);
 
-        $this->addJob($job);
+        $this->addJob($job, $queue);
     }
 
     /**
@@ -121,5 +123,10 @@ class Tina4RedisJob implements Tina4QueueInterface
         if ($this->jobsConnection->isConnected()) {
             $this->jobsConnection->close();
         }
+    }
+
+    public function requeueFailedJob(string $uuid): void
+    {
+        // TODO: Implement requeueFailedJob() method.
     }
 }

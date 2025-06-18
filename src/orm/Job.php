@@ -17,10 +17,15 @@ class Job extends \Tina4\ORM
     //public $softDelete=true; //uncomment for soft deletes in crud 
     
 	public $id;
+    public $uuid;
 	public $queue;
 	public $payload;
 	public $attempts;
 	public $reservedAt;
 	public $availableAt;
 	public $createdAt;
+
+    public $virtualFields = [
+        "uuid"
+    ];
 }
