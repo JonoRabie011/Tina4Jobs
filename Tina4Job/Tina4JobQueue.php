@@ -9,7 +9,7 @@ namespace Tina4Jobs;
 
 use Tina4Jobs\Tina4Queue\Tina4JobFactory;
 
-class Tina4JobQueue
+final class Tina4JobQueue
 {
 
     /**
@@ -18,7 +18,7 @@ class Tina4JobQueue
      * @param string $queue The queue to add the job to
      * @return void
      */
-    protected static function push(object|array $jobs, string $queue = "default"): void
+    final static function push(object|array $jobs, string $queue = "default"): void
     {
         if (is_array($jobs)) {
             foreach ($jobs as $job) {
