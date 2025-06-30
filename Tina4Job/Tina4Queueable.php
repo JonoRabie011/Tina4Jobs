@@ -12,8 +12,6 @@ Trait Tina4Queueable
 
     private int $attempt;
 
-    protected int $attempts = 2;
-
     public function setJobId($jobId)
     {
         $this->jobId = $jobId;
@@ -31,7 +29,7 @@ Trait Tina4Queueable
     public function getAttempts(): int
     {
         if(empty($this->attempts)) {
-            $this->attempts = 1;
+            $this->attempts = 2;
         }
 
         return $this->attempts;
