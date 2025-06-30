@@ -11,14 +11,23 @@ To install the package you can use the following command
 composer require tina4components/tina4jobsmodule
 ```
 
-## Usage
+## Usage (DATABASE QUEUE)
+
+```dotenv
+    QUEUE_DRIVER: database
+```
+
+## Usage (REDIS QUEUE - Still in Beta) 
 
 There are two variables that you need to set in your .env file
 
 ```dotenv
-  REDIS_HOST: <host address to your redis server>
-  REDIS_PORT: <ports to your redis server: Default usually on redis is :6379>
+    QUEUE_DRIVER: redis
+    REDIS_HOST: <host address to your redis server>
+    REDIS_PORT: <ports to your redis server: Default usually on redis is :6379>
 ```
+
+## General Usage
 
 When creating a job you need to create a class that implements the `Tina4Job` interface and implement the `handle()` method. 
 The `handle()` method is the method that will be called when the job is run.
@@ -51,7 +60,7 @@ class TestJob implements Tina4Job
 }
 ```
 
-Creating a job is as simple as creating a new instance of Tina4Jobs and adding it to the jobs list.
+Creating a job is as simple as creating a new instance of TestJob class and adding it to the jobs list.
 
 ```php
 \Tina4Jobs\Tina4JobQueue::push((new \Tina4Jobs\TestJob(
@@ -107,3 +116,10 @@ Notes:
 - You can change the description of the service to whatever you want.
 - You can change the name of the service to whatever you want.
 - To stop the service you can use `systemctl stop tina4jobs.service`
+
+
+
+### Todo
+
+- Need to implement multiple queue names
+- Write Tests for all functions and classes
