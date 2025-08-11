@@ -105,13 +105,37 @@ class Tina4QueueableTest extends TestCase
             // Create a class that uses the trait but overrides the attempts value
             $customObject = new class {
                 use Tina4Queueable;// Custom attempts value
+
+                protected int $attempts = 26;
             };
             
-            $this->assertEquals(2, $customObject->getAttempts());
+            $this->assertEquals(26, $customObject->getAttempts());
             $this->printResult("Custom attempts value", true);
         } catch (\Throwable $e) {
             echo "Error: " . $e->getMessage() . "\n";
             $this->printResult("Custom attempts value", false);
+            throw $e;
+        }
+    }
+
+
+    public function testTimeoutAfterTime()
+    {
+        $this->printHeader("Testing get timeout value");
+
+        try {
+            // Create a class that uses the trait but overrides the attempts value
+            $customObject = new class {
+                use Tina4Queueable;// Custom attempts value
+
+                protected int $timeOutAfter = 600;
+            };
+
+            $this->assertEquals(600, $customObject->getTimeoutAfterTime());
+            $this->printResult("Custom get timeout value", true);
+        } catch (\Throwable $e) {
+            echo "Error: " . $e->getMessage() . "\n";
+            $this->printResult("Custom get timeout value", false);
             throw $e;
         }
     }

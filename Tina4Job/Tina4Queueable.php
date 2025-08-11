@@ -76,4 +76,13 @@ Trait Tina4Queueable
 
         return $this->timeBetweenAttempts;
     }
+
+    public function getTimeoutAfterTime(): int
+    {
+        if(empty($this->timeOutAfter)) {
+            $this->timeOutAfter = 120;
+        }
+
+        return $this->timeOutAfter;
+    }
 }

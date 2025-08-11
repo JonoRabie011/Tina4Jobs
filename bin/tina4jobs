@@ -48,6 +48,21 @@ try {
             echo "Received shutdown signal, stopping...\n";
             $shouldStop = true;
         });
+
+        pcntl_signal(SIGALRM, function() use (&$shouldStop, $jobQueue, &$nextJob) {
+            echo "Job timed out, marking as failed...\n";
+            if (property_exists($nextJob, 'jobId')) {
+                try {
+                    $jobQueue->markJobFailed('Timeout', $nextJob->getJobId(), convert_uuencode(serialize($nextJob)));
+                } catch (Exception $exception) {
+                    echo "Failed to mark job as failed: " . $exception->getMessage() . "\n";
+
+                    $shouldStop = true; // Stop processing on failure to mark job
+                }
+            }
+            // Optionally, throw an exception to break out of job processing
+            echo "Job timed out and marked as failed.\n";
+        });
     }
 
     // Start the job processing loop
@@ -64,9 +79,19 @@ try {
             echo "Processing job: " . get_class($nextJob) . "\n";
 
             try {
+
+                // Set an alarm for job timeout
+                if (function_exists('pcntl_alarm')) {
+                    pcntl_alarm($nextJob->getTimeoutAfterTime());
+                }
+
                 // Process the job here
                 if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
                     $nextJob->handle();
+                }
+
+                if (function_exists('pcntl_alarm')) {
+                    pcntl_alarm(0); // Cancel alarm
                 }
 
                 // Mark job as completed (you’ll need to pass the actual job ID)
@@ -75,6 +100,10 @@ try {
                     echo "Job completed: ID " . $nextJob->getJobId() . "\n";
                 }
             } catch (Exception $e) {
+                if (function_exists('pcntl_alarm')) {
+                    pcntl_alarm(0); // Cancel alarm on exception
+                }
+
                 if(property_exists($nextJob, 'attempts')) {
                     if($nextJob->attempt()) {
                         $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts());
