@@ -5,7 +5,7 @@ namespace Tina4Jobs;
 Trait Tina4Queueable
 {
     /**
-     * The id of the job used for a datatbase job
+     * The id of the job used for a database job
      * @var int
      */
     private int $jobId;
@@ -79,10 +79,10 @@ Trait Tina4Queueable
 
     public function getTimeoutAfterTime(): int
     {
-        if(empty($this->timeOutAfter)) {
-            $this->timeOutAfter = 120;
+        if(empty($this->timeoutAfterTime)) {
+            $this->timeoutAfterTime = 120;
         }
 
-        return $this->timeOutAfter;
+        return $this->timeoutAfterTime;
     }
 }
