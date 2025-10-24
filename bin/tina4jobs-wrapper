@@ -1,0 +1,49 @@
+#!/usr/bin/env php
+<?php
+// Small wrapper to allow calling `composer start-jobs --queue=name` without an extra `--`.
+// It inspects the parent (composer or shell) command line for --queue/-q and forwards it to the real binary.
+
+$wrapperDir = __DIR__;
+$binary = $wrapperDir . DIRECTORY_SEPARATOR . 'tina4jobs';
+
+$pid = getmypid();
+// Get parent pid via ps
+$ppid = trim(shell_exec("ps -o ppid= -p $pid"));
+$parentCmd = '';
+if (!empty($ppid)) {
+    $parentCmd = trim(shell_exec("ps -o command= -p " . intval($ppid)));
+}
+
+// Also attempt to read grandparent command (parent of parent)
+$gpCmd = '';
+if (!empty($ppid)) {
+    $gppid = trim(shell_exec("ps -o ppid= -p " . intval($ppid)));
+    if (!empty($gppid)) {
+        $gpCmd = trim(shell_exec("ps -o command= -p " . intval($gppid)));
+    }
+}
+
+$queueName = null;
+$search = $parentCmd . ' ' . $gpCmd;
+if (preg_match('/--queue=([^\s]+)/', $search, $m)) {
+    $queueName = $m[1];
+} elseif (preg_match('/-q=([^\s]+)/', $search, $m)) {
+    $queueName = $m[1];
+} elseif (preg_match('/--queue\s+([^\s]+)/', $search, $m)) {
+    $queueName = $m[1];
+} elseif (preg_match('/\s-q\s+([^\s]+)/', $search, $m)) {
+    $queueName = $m[1];
+}
+
+// Build command: invoke via PHP_BINARY so the target script doesn't need +x
+$php = defined('PHP_BINARY') ? PHP_BINARY : 'php';
+$cmdParts = [escapeshellarg($php), escapeshellarg($binary)];
+if ($queueName !== null && $queueName !== '') {
+    $cmdParts[] = '--queue=' . escapeshellarg($queueName);
+}
+
+$cmd = implode(' ', $cmdParts);
+
+// Execute the real binary and forward its exit code
+passthru($cmd, $exitCode);
+exit($exitCode);

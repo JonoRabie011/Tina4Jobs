@@ -15,6 +15,9 @@ use Tina4\Utilities;
 class Tina4DatabaseJob extends Data implements Tina4QueueInterface
 {
 
+    /**
+     * @inheritDoc
+     */
     public function addJob(object|string $job, string $queue = "default"): void
     {
         try {
@@ -42,6 +45,9 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = new Job();

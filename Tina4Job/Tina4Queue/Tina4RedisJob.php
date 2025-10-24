@@ -50,15 +50,13 @@ class Tina4RedisJob implements Tina4QueueInterface
     }
 
     /**
-     * Add a job to the queue.
-     * @param object|string $job Tina4Job as object or serialized string
-     * @param string $queue The queue to add the job to
+     * @inheritDoc
      */
     public function addJob(object|string $job, string $queue = "default"): void
     {
         try {
             $serializeJob = serialize($job);
-            $this->jobsConnection->lPush("default", $serializeJob);
+            $this->jobsConnection->lPush($queue, $serializeJob);
         } catch (RedisException $e) {
             echo "Failed to add job to queue: ", $e->getMessage(), "\n";
             // Implement further handling if needed, like logging
@@ -66,10 +64,7 @@ class Tina4RedisJob implements Tina4QueueInterface
     }
 
     /**
-     * Get the next job from the queue.
-     * @param string $queue The queue to get the job from
-     * @return object|null The next job in the queue, or null if the queue is empty
-     * @throws RedisException
+     * @inheritDoc
      */
     public function getNextJob(string $queue = "default"): ?object
     {
@@ -77,18 +72,17 @@ class Tina4RedisJob implements Tina4QueueInterface
         return $job ? unserialize($job) : null;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function markJobCompleted(int $jobId): void
     {
         // TODO: Implement markJobCompleted() method.
     }
 
+
     /**
-     * Add failed job to the failed jobs table
-     * @param string $exception
-     * @param int $jobId
-     * @param string $payload
-     * @param string $queue
-     * @return void
+     * @inheritDoc
      */
     public function markJobFailed(string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"): void
     {
@@ -107,6 +101,9 @@ class Tina4RedisJob implements Tina4QueueInterface
     }
 
 
+    /**
+     * @inheritDoc
+     */
     public function releaseJob(object|string $job, int $timeBetween, string $queue = "default"): void
     {
         sleep($timeBetween);
@@ -125,6 +122,9 @@ class Tina4RedisJob implements Tina4QueueInterface
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     public function requeueFailedJob(string $uuid): void
     {
         // TODO: Implement requeueFailedJob() method.

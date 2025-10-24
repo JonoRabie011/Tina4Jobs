@@ -8,11 +8,12 @@
         "composer-plugin-api": "^2.0",
         "tina4stack/tina4php-sqlite3": "^2.0",
         "ext-redis": "*",
-        "ext-sqlite3": "*"
+        "ext-sqlite3": "*",
+        "ext-pcntl": "*"
     },
     "scripts": {
         "tina4": "tina4",
-        "tina4jobs": "tina4jobs",
+        "tina4jobs": "php bin/tina4jobs-wrapper",
         "unit": "./vendor/bin/phpunit ./Tina4Job/test",
         "test": "@tina4 tests:run",
         "test:verbose": "@tina4 tests:verbose",

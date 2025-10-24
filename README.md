@@ -44,6 +44,14 @@ use Tina4Jobs\Tina4Job;
 class TestJob implements Tina4Job
 {
     use Tina4Queueable; // This is a trait that is used to make the job queueable
+    
+    /*
+     * You can set a custom queue name for the job
+     * if this is set this will be the preferred queue for this job
+     * and override any queue name passed when adding the job to the queue
+     * aswell as the default queue
+     */
+    protected $queue = "CustomQueueName"; 
 
     private $user;
 
@@ -74,8 +82,17 @@ Creating a job is as simple as creating a new instance of TestJob class and addi
 
 To run the jobs there is a jobs service in the Tina4Jobs module that you can use to run the jobs.
 
+Listens to the queue name "default" if no queue name is provided.
 ```bash
 composer start-jobs
+```
+
+Custom queue name
+```bash
+composer start-jobs --queue=queue_name
+````
+```bash
+ composer start-jobs --q=queue_name
 ```
 
 ## Running jobs on linux server as a service
@@ -121,5 +138,4 @@ Notes:
 
 ### Todo
 
-- Need to implement multiple queue names
 - Write Tests for all functions and classes

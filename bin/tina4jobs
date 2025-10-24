@@ -8,6 +8,35 @@ global $rootPath;
 global $session; //store things here you want to reuse
 $session = [];
 
+// --- parse queue name from argv ---
+$queueName = "default";
+if (!empty($argv) && is_array($argv)) {
+    // Start at 1 to skip script name
+    for ($i = 1; $i < count($argv); $i++) {
+        $arg = $argv[$i];
+
+        if (str_starts_with($arg, '--queue=')) {
+            $queueName = substr($arg, strlen('--queue='));
+            continue;
+        }
+
+        if (str_starts_with($arg, '-q=')) {
+            $queueName = substr($arg, strlen('-q='));
+            continue;
+        }
+
+        if ($arg === '--queue' || $arg === '-q') {
+            // next value should be the queue name
+            if (isset($argv[$i + 1]) && !str_starts_with($argv[$i + 1], '-')) {
+                $queueName = $argv[$i + 1];
+                $i++; // skip next
+            }
+            continue;
+        }
+    }
+}
+// --- end parse queue name from argv ---
+
 foreach (get_included_files() as $id => $file) {
     if (strpos($file, "vendor" . DIRECTORY_SEPARATOR . "autoload.php")) {
         $rootPath = str_ireplace("vendor" . DIRECTORY_SEPARATOR . "autoload.php", "", $file);
@@ -33,7 +62,7 @@ try {
     // Initialize the job queue using the factory, which chooses the driver based on config
     $jobQueue = Tina4JobFactory::createQueueDriver();
 
-    echo "Starting job processor...\n";
+    echo "Starting job processor for queue: {$queueName}\n";
 
     // Flag to manage graceful shutdown
     $shouldStop = false;
@@ -49,11 +78,11 @@ try {
             $shouldStop = true;
         });
 
-        pcntl_signal(SIGALRM, function() use (&$shouldStop, $jobQueue, &$nextJob) {
+        pcntl_signal(SIGALRM, function() use (&$shouldStop, $jobQueue, &$nextJob, $queueName) {
             echo "Job timed out, marking as failed...\n";
             if (property_exists($nextJob, 'jobId')) {
                 try {
-                    $jobQueue->markJobFailed('Timeout', $nextJob->getJobId(), convert_uuencode(serialize($nextJob)));
+                    $jobQueue->markJobFailed('Timeout', $nextJob->getJobId(), convert_uuencode(serialize($nextJob)), $queueName);
                 } catch (Exception $exception) {
                     echo "Failed to mark job as failed: " . $exception->getMessage() . "\n";
 
@@ -73,7 +102,7 @@ try {
         }
 
         // Attempt to get the next job in the queue
-        $nextJob = $jobQueue->getNextJob();
+        $nextJob = $jobQueue->getNextJob($queueName);
 
         if ($nextJob) {
             echo "Processing job: " . get_class($nextJob) . "\n";
@@ -104,14 +133,19 @@ try {
                     pcntl_alarm(0); // Cancel alarm on exception
                 }
 
+                $shouldRetry = false;
+
+                //Check if max attempts have been reached if not the allow retry
                 if(property_exists($nextJob, 'attempts')) {
                     if($nextJob->attempt()) {
-                        $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts());
-                    } else {
-                        $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)));
+                        $shouldRetry = true;
                     }
+                }
+
+                if($shouldRetry) {
+                    $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts(), $queueName);
                 } else {
-                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)));
+                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)), $queueName);
                 }
 
             }

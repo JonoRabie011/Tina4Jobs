@@ -13,6 +13,21 @@ final class Tina4JobQueue
 {
 
     /**
+     * Get the queue name for the job
+     * If the job has a 'queue' property, use that. Otherwise default to the one passed in
+     * @param object $job The job object
+     * @return string The queue name
+     */
+    private static function getQueue($job, $queue): string
+    {
+        if (property_exists($job, 'queue')) {
+            return $job->queue;
+        }
+
+        return $queue;
+    }
+
+    /**
      * Add new job to the queue
      * @param object|string|array $jobs The job to add to the queue or an array of jobs
      * @param string $queue The queue to add the job to
@@ -22,10 +37,12 @@ final class Tina4JobQueue
     {
         if (is_array($jobs)) {
             foreach ($jobs as $job) {
-                Tina4JobFactory::createQueueDriver()->addJob($job, $queue);
+                $queueForJob = self::getQueue($job, $queue);
+                Tina4JobFactory::createQueueDriver()->addJob($job, $queueForJob);
             }
         } else {
-            Tina4JobFactory::createQueueDriver()->addJob($jobs, $queue);
+            $queueForJob = self::getQueue($jobs, $queue);
+            Tina4JobFactory::createQueueDriver()->addJob($jobs, $queueForJob);
         }
     }
 }
