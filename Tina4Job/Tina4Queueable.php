@@ -12,6 +12,8 @@ Trait Tina4Queueable
 
     private int $attempt;
 
+    protected int $timeoutAfterTime;
+
     public function setJobId($jobId)
     {
         $this->jobId = $jobId;
