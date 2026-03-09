@@ -2,10 +2,8 @@
 
 namespace Tina4Jobs;
 
-class TestJob implements Tina4Job
+class TestJob extends Tina4Job
 {
-    use Tina4Queueable; // Use the trait to get queue-related functionality
-
     /**
      * @var int Number of attempts allowed for the job
      */
@@ -18,9 +16,10 @@ class TestJob implements Tina4Job
      * @var int Timeout duration in seconds for the job
      */
     protected int $timeoutAfterTime = 60;
-    private $user;
 
-    public $queue = "Another";
+    private array $user;
+
+    public string $queue = "Another";
 
     public function __construct($payload = [])
     {
@@ -28,6 +27,9 @@ class TestJob implements Tina4Job
             ...$payload];
     }
 
+    /**
+     * @inheritDoc
+     */
     public function handle(): void
     {
 

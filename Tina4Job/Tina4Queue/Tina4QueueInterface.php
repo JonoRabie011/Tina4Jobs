@@ -29,12 +29,12 @@ interface Tina4QueueInterface
     /**
      * Mark a job as failed
      * @param string $exception The exception message
-     * @param int $jobId The job ID
+     * @param int | string $jobId The job ID
      * @param string $payload The job payload
      * @param string $queue The queue name
      * @return void
      */
-    public function markJobFailed(string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"): void;
+    public function markJobFailed(string $exception, int | string $jobId, string $payload = "No Payload", string $queue = "default"): void;
 
     /**
      * Release a job back to the queue after a failure, with a delay

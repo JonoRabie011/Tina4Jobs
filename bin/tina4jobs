@@ -3,16 +3,22 @@
 
 use Tina4Jobs\Tina4Queue\Tina4JobFactory;
 
-$replacePath = $argv[0]; //used to figure out where we're running
+$replacePath = $argv[0];
+
 global $rootPath;
-global $session; //store things here you want to reuse
+global $session;
+
 $session = [];
 
-// --- parse queue name from argv ---
+// ----------------------
+// Parse queue argument
+// ----------------------
+
 $queueName = "default";
+
 if (!empty($argv) && is_array($argv)) {
-    // Start at 1 to skip script name
     for ($i = 1; $i < count($argv); $i++) {
+
         $arg = $argv[$i];
 
         if (str_starts_with($arg, '--queue=')) {
@@ -26,18 +32,19 @@ if (!empty($argv) && is_array($argv)) {
         }
 
         if ($arg === '--queue' || $arg === '-q') {
-            // next value should be the queue name
             if (isset($argv[$i + 1]) && !str_starts_with($argv[$i + 1], '-')) {
                 $queueName = $argv[$i + 1];
-                $i++; // skip next
+                $i++;
             }
-            continue;
         }
     }
 }
-// --- end parse queue name from argv ---
 
-foreach (get_included_files() as $id => $file) {
+// ----------------------
+// Resolve project root
+// ----------------------
+
+foreach (get_included_files() as $file) {
     if (strpos($file, "vendor" . DIRECTORY_SEPARATOR . "autoload.php")) {
         $rootPath = str_ireplace("vendor" . DIRECTORY_SEPARATOR . "autoload.php", "", $file);
         break;
@@ -45,125 +52,200 @@ foreach (get_included_files() as $id => $file) {
 }
 
 if (empty($rootPath)) {
-    $rootPath = str_replace("vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", __FILE__);
+    $rootPath = str_replace(
+            "vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs",
+            "",
+            __FILE__
+    );
+
     $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
 }
 
 require_once "{$rootPath}vendor/autoload.php";
+
 define("TINA4_SUPPRESS", true);
 
 if (file_exists($rootPath . "index.php")) {
     include_once $rootPath . "index.php";
 }
 
-//Garbage collection
 gc_enable();
+
 try {
-    // Initialize the job queue using the factory, which chooses the driver based on config
+
     $jobQueue = Tina4JobFactory::createQueueDriver();
 
     echo "Starting job processor for queue: {$queueName}\n";
 
-    // Flag to manage graceful shutdown
     $shouldStop = false;
 
-    // Register signal handlers for graceful shutdown
+    // ----------------------
+    // Worker config
+    // ----------------------
+
+    $maxWorkers = 10;
+    $children = [];
+    $maxMemory = 256 * 1024 * 1024;
+
+    // ----------------------
+    // Signal handling
+    // ----------------------
+
     if (function_exists('pcntl_signal')) {
+
         pcntl_signal(SIGTERM, function () use (&$shouldStop) {
-            echo "Received shutdown signal, stopping...\n";
+            echo "SIGTERM received. Shutting down...\n";
             $shouldStop = true;
         });
+
         pcntl_signal(SIGINT, function () use (&$shouldStop) {
-            echo "Received shutdown signal, stopping...\n";
+            echo "SIGINT received. Shutting down...\n";
             $shouldStop = true;
         });
 
-        pcntl_signal(SIGALRM, function() use (&$shouldStop, $jobQueue, &$nextJob, $queueName) {
-            echo "Job timed out, marking as failed...\n";
-            if (property_exists($nextJob, 'jobId')) {
-                try {
-                    $jobQueue->markJobFailed('Timeout', $nextJob->getJobId(), convert_uuencode(serialize($nextJob)), $queueName);
-                } catch (Exception $exception) {
-                    echo "Failed to mark job as failed: " . $exception->getMessage() . "\n";
-
-                    $shouldStop = true; // Stop processing on failure to mark job
-                }
-            }
-            // Optionally, throw an exception to break out of job processing
-            echo "Job timed out and marked as failed.\n";
-        });
     }
 
-    // Start the job processing loop
+    // ----------------------
+    // Worker Loop
+    // ----------------------
+
     while (!$shouldStop) {
-        // Dispatch any pending signals
-        if (function_exists('pcntl_signal_dispatch')) {
-            pcntl_signal_dispatch();
+
+        pcntl_signal_dispatch();
+
+        // Reap finished children
+        foreach ($children as $pid => $jobId) {
+
+            $result = pcntl_waitpid($pid, $status, WNOHANG);
+
+            if ($result > 0) {
+                unset($children[$pid]);
+            }
         }
 
-        // Attempt to get the next job in the queue
+        // Memory protection
+        if (memory_get_usage(true) > $maxMemory) {
+            echo "Memory limit reached. Restarting worker...\n";
+            exit;
+        }
+
+        // Limit worker count
+        if (count($children) >= $maxWorkers) {
+            usleep(500000);
+            continue;
+        }
+
+        // Fetch next job
         $nextJob = $jobQueue->getNextJob($queueName);
 
-        if ($nextJob) {
-            echo "Processing job: " . get_class($nextJob) . "\n";
-
-            try {
-
-                // Set an alarm for job timeout
-                if (function_exists('pcntl_alarm')) {
-                    pcntl_alarm($nextJob->getTimeoutAfterTime());
-                }
-
-                // Process the job here
-                if (get_class($nextJob) !== "__PHP_Incomplete_Class") {
-                    $nextJob->handle();
-                }
-
-                if (function_exists('pcntl_alarm')) {
-                    pcntl_alarm(0); // Cancel alarm
-                }
-
-                // Mark job as completed (you’ll need to pass the actual job ID)
-                if (property_exists($nextJob, 'jobId') && !empty($nextJob->getJobId())) {
-                    $jobQueue->markJobCompleted($nextJob->getJobId());
-                    echo "Job completed: ID " . $nextJob->getJobId() . "\n";
-                }
-            } catch (Exception $e) {
-                if (function_exists('pcntl_alarm')) {
-                    pcntl_alarm(0); // Cancel alarm on exception
-                }
-
-                $shouldRetry = false;
-
-                //Check if max attempts have been reached if not the allow retry
-                if(property_exists($nextJob, 'attempts')) {
-                    if($nextJob->attempt()) {
-                        $shouldRetry = true;
-                    }
-                }
-
-                if($shouldRetry) {
-                    $jobQueue->releaseJob($nextJob, $nextJob->getTimeBetweenAttempts(), $queueName);
-                } else {
-                    $jobQueue->markJobFailed(serialize($e), $nextJob->getJobId() ?? -1, convert_uuencode(serialize($nextJob)), $queueName);
-                }
-
-            }
-
-            // Perform garbage collection to free up memory
-            gc_collect_cycles();
-
-        } else {
-            // No jobs in the queue, wait before checking again
+        if (!$nextJob) {
             echo "No jobs found. Waiting...\n";
+            sleep(2);
+            continue;
         }
 
-        // Sleep for a defined interval before checking for the next job
-        sleep(5); // Adjust the sleep time as needed (in seconds)
+        if (get_class($nextJob) === "__PHP_Incomplete_Class") {
+            echo "Invalid job payload.\n";
+            continue;
+        }
+
+        echo "Processing job: " . get_class($nextJob) . "\n";
+
+        $pid = pcntl_fork();
+
+        if ($pid == -1) {
+            throw new Exception("Failed to fork worker");
+        }
+
+        if ($pid) {
+            // Parent
+            $children[$pid] = $nextJob->getJobId();
+            continue;
+        }
+
+        // ----------------------
+        // CHILD PROCESS
+        // ----------------------
+
+        runJob($nextJob, $jobQueue, $queueName);
+
+        exit(0);
     }
 
-    echo "Job processor stopped gracefully.\n";
+    echo "Worker shutting down gracefully\n";
 
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
+
+    echo "Worker error: " . $e->getMessage() . "\n";
+
+}
+
+// ----------------------
+// Job Runner
+// ----------------------
+
+function runJob($job, $jobQueue, $queueName)
+{
+
+    try {
+
+        if (function_exists('pcntl_alarm')) {
+            pcntl_alarm($job->getTimeoutAfterTime());
+        }
+
+        $job->handle();
+
+        if (property_exists($job, 'jobId') && !empty($job->getJobId())) {
+
+            $jobQueue->markJobCompleted(
+                    $job->getJobId()
+            );
+
+            echo "Job completed: " . $job->getJobId() . "\n";
+        }
+
+    } catch (Throwable $e) {
+
+        echo "Job failed: " . $e->getMessage() . "\n";
+
+        $shouldRetry = false;
+
+        if (property_exists($job, 'attempts')) {
+
+            if ($job->attempt()) {
+                $shouldRetry = true;
+            }
+
+        }
+
+        if ($shouldRetry) {
+
+            $jobQueue->releaseJob(
+                    $job,
+                    $job->getTimeBetweenAttempts(),
+                    $queueName
+            );
+
+            echo "Job released back to queue\n";
+
+        } else {
+
+            $jobQueue->markJobFailed(
+                    serialize($e),
+                    $job->getJobId() ?? -1,
+                    convert_uuencode(serialize($job)),
+                    $queueName
+            );
+
+            echo "Job permanently failed\n";
+
+        }
+
+    }
+
+    if (function_exists('pcntl_alarm')) {
+        pcntl_alarm(0);
+    }
+
+    gc_collect_cycles();
 }

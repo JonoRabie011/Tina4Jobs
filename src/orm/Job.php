@@ -1,7 +1,7 @@
 <?php
 class Job extends \Tina4\ORM
 {
-    public $tableName="jobs";
+    public $tableName="tina4_jobs";
     public $primaryKey="id"; //set for primary key
     public $fieldMapping = [
         "id" => "id",

@@ -1,5 +1,5 @@
 -- Failed jobs table
-CREATE TABLE failed_jobs (
+CREATE TABLE tina4_failed_jobs (
                              id         SERIAL PRIMARY KEY,
                              uuid       TEXT NOT NULL UNIQUE,
                              connection TEXT NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE failed_jobs (
 );
 
 -- Jobs table
-CREATE TABLE jobs (
+CREATE TABLE tina4_jobs (
                       id           SERIAL PRIMARY KEY,
                       queue        TEXT NOT NULL,
                       payload      TEXT NOT NULL,
@@ -21,4 +21,4 @@ CREATE TABLE jobs (
 );
 
 -- Index on queue for faster lookups
-CREATE INDEX jobs_queue_index ON jobs (queue);
+CREATE INDEX jobs_queue_index ON tina4_jobs (queue);

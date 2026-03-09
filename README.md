@@ -32,7 +32,7 @@ There are two variables that you need to set in your .env file
 When creating a job you need to create a class that implements the `Tina4Job` interface and implement the `handle()` method. 
 The `handle()` method is the method that will be called when the job is run.
 
-The following is an example of a job that writes a user to a file, All job classes need to implement the Tina4Job interface.
+The following is an example of a job that writes a user to a file, All job classes need to extend Tina4Job abstract class.
 
 ```php
 <?php
@@ -41,9 +41,8 @@ namespace Tina4Jobs;
 
 use Tina4Jobs\Tina4Job;
 
-class TestJob implements Tina4Job
+class TestJob extends Tina4Job
 {
-    use Tina4Queueable; // This is a trait that is used to make the job queueable
     
     /*
      * You can set a custom queue name for the job

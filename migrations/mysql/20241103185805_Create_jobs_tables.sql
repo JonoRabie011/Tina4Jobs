@@ -1,4 +1,4 @@
-CREATE TABLE failed_jobs
+CREATE TABLE tina4_failed_jobs
 (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     uuid       VARCHAR(255) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE failed_jobs
     UNIQUE (uuid)
 );
 
-CREATE TABLE jobs (
+CREATE TABLE tina4_jobs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   queue VARCHAR(255) NOT NULL,
   payload TEXT NOT NULL,
@@ -20,4 +20,4 @@ CREATE TABLE jobs (
   created_at INT NOT NULL
 );
 
-CREATE INDEX jobs_queue_index ON jobs (queue);
+CREATE INDEX jobs_queue_index ON tina4_jobs (queue);

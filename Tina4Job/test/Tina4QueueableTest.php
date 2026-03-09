@@ -2,7 +2,7 @@
 namespace Tina4Jobs\test;
 
 use PHPUnit\Framework\TestCase;
-use Tina4Jobs\Tina4Queueable;
+use Tina4Jobs\Traits\Tina4Queueable;
 
 class Tina4QueueableTest extends TestCase
 {

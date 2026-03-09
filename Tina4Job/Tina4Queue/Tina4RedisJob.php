@@ -31,7 +31,6 @@ class Tina4RedisJob implements Tina4QueueInterface
         $this->jobsConnection = new Redis();
 
         $this->openConnection();
-
     }
 
     /**
@@ -69,7 +68,20 @@ class Tina4RedisJob implements Tina4QueueInterface
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = $this->jobsConnection->rPop($queue);
-        return $job ? unserialize($job) : null;
+
+        if (!empty($job)) {
+            $currentJobUnSerialized = unserialize(convert_uudecode($job->payload));
+
+            /*
+             * Set the job ID on the job object as a GUID since Redis does not have an auto-incrementing ID like a database.
+             * This allows us to track the job for completion or failure.
+             */
+            $currentJobUnSerialized->setJobId((new Utilities())->getGUID());
+
+            return $currentJobUnSerialized;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -84,11 +96,11 @@ class Tina4RedisJob implements Tina4QueueInterface
     /**
      * @inheritDoc
      */
-    public function markJobFailed(string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"): void
+    public function markJobFailed(string $exception, string|int $jobId = "", string $payload = "No Payload", string $queue = "default"): void
     {
         try {
             $failedJob = new \FailedJob();
-            $failedJob->uuid = (new Utilities())->getGUID();
+            $failedJob->uuid = $jobId ?? (new Utilities())->getGUID();
             $failedJob->connection = Tina4RedisJob::class;
             $failedJob->queue = $queue;
             $failedJob->payload = $payload;

@@ -7,12 +7,15 @@ use Composer\Plugin\PluginInterface;
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Script\Event;
 use Composer\IO\IOInterface;
+use Tina4\ORM;
 
 class InstallerPlugin implements PluginInterface, EventSubscriberInterface
 {
     public function activate(Composer $composer, IOInterface $io)
     {
         // Initialization code if needed when plugin is activated
+
+
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
@@ -153,7 +156,7 @@ class InstallerPlugin implements PluginInterface, EventSubscriberInterface
         // List of required environment variables key-value pairs
         $keys = [
             "REDIS_HOST" => "localhost",
-            "REDIS_PORT" => "6379",
+            "REDIS_PORT" => "6379"
         ];
 
         // Check if .env file exists else create it

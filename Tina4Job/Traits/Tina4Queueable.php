@@ -1,25 +1,26 @@
 <?php
 
-namespace Tina4Jobs;
+namespace Tina4Jobs\Traits;
 
 Trait Tina4Queueable
 {
-    /**
-     * The id of the job used for a database job
-     * @var int
-     */
-    private int $jobId;
+    private string|int $jobId;
 
     private int $attempt;
 
     protected int $timeoutAfterTime;
 
-    public function setJobId($jobId)
+    /**
+     * Set the job id for the job
+     * @param $jobId
+     * @return void
+     */
+    public function setJobId($jobId): void
     {
         $this->jobId = $jobId;
     }
 
-    public function getJobId()
+    public function getJobId(): int|string
     {
         return $this->jobId;
     }

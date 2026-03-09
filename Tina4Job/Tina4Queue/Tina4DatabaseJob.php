@@ -85,14 +85,14 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
      * This function will add the failed job to the failed jobs table
      * and remove the job from the jobs table
      * @param string $exception The exception message
-     * @param int $jobId The job id as stored in the jobs table
+     * @param int|string $jobId The job id as stored in the jobs table
      * @param string $payload The payload of the job that failed, default is "No Payload"
      * @param string $queue The queue the job was in, default is "default"
      * @return void
      * @throws InvalidArgumentException
      */
     public function markJobFailed(
-        string $exception, int $jobId, string $payload = "No Payload", string $queue = "default"
+        string $exception, int|string $jobId, string $payload = "No Payload", string $queue = "default"
     ): void
     {
         $failedJob = new \FailedJob();
@@ -104,9 +104,7 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
         $failedJob->failedAt = date("Y-m-d H:i:s");
 
         if ($failedJob->save()) {
-            $job = new Job();
-            $job->id = $jobId;
-            $job->delete();
+            $this->markJobCompleted($jobId);
         }
     }
 
