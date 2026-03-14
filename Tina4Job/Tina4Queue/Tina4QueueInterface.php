@@ -4,6 +4,16 @@ namespace Tina4Jobs\Tina4Queue;
 
 interface Tina4QueueInterface
 {
+
+    /**
+     * This function handles delayed jobs
+     * @param object|string $job The job to add to the queue
+     * @param int $availableAt The tome the job should be processed
+     * @param string $queue The queue to add the job to
+     * @return void
+     */
+    public function addFutureJob(object|string $job, int $availableAt = 0, string $queue = 'default'): void;
+
     /**
      * Add new job to the queue
      * @param object|string $job The job to add to the queue

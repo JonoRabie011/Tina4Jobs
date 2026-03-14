@@ -65,6 +65,14 @@ class Tina4RedisJob implements Tina4QueueInterface
     /**
      * @inheritDoc
      */
+    public function addFutureJob(object|string $job, int $availableAt = 0, string $queue = 'default'): void
+    {
+        // TODO: Implement addFutureJob() method.
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getNextJob(string $queue = "default"): ?object
     {
         $job = $this->jobsConnection->rPop($queue);

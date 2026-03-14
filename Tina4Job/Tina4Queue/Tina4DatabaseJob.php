@@ -18,6 +18,39 @@ class Tina4DatabaseJob extends Data implements Tina4QueueInterface
     /**
      * @inheritDoc
      */
+    public function addFutureJob(object|string $job, int $availableAt = 0, string $queue = 'default'): void
+    {
+        try {
+            if($availableAt <= 0) {
+                $availableAt = time();
+            }
+
+            $attempt = 1;
+
+            if(property_exists($job, 'attempt')) {
+                $attempt = $job->getAttempt();
+
+                if($attempt > 1) {
+                    $availableAt = time() + $job->getTimeBetweenAttempts();
+                }
+            }
+
+            $newJob = new Job();
+            $newJob->queue = $queue;
+            $newJob->payload = convert_uuencode(serialize($job));
+            $newJob->attempts = $attempt;
+            $newJob->reservedAt = -1;
+            $newJob->availableAt = $availableAt;
+            $newJob->createdAt = time();
+            $newJob->save();
+        } catch (\Exception $exception) {
+            echo $exception->getMessage();
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function addJob(object|string $job, string $queue = "default"): void
     {
         try {

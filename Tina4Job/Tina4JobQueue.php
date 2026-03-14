@@ -7,7 +7,9 @@
 
 namespace Tina4Jobs;
 
+use RuntimeException;
 use Tina4Jobs\Tina4Queue\Tina4JobFactory;
+use Tina4Jobs\Tina4Queue\Tina4RedisJob;
 
 final class Tina4JobQueue
 {
@@ -36,13 +38,32 @@ final class Tina4JobQueue
     final static function push(object|array $jobs, string $queue = "default"): void
     {
         if (is_array($jobs)) {
+            $jobFactory = Tina4JobFactory::createQueueDriver();
             foreach ($jobs as $job) {
                 $queueForJob = self::getQueue($job, $queue);
-                Tina4JobFactory::createQueueDriver()->addJob($job, $queueForJob);
+                $jobFactory->addJob($job, $queueForJob);
             }
         } else {
             $queueForJob = self::getQueue($jobs, $queue);
             Tina4JobFactory::createQueueDriver()->addJob($jobs, $queueForJob);
+        }
+    }
+
+    final static function pushWithDelay(object|array $jobs, string $queue = "default"): void
+    {
+        $jobFactory = Tina4JobFactory::createQueueDriver();
+        if($jobFactory instanceof Tina4RedisJob) {
+            throw new RuntimeException("Delayed jobs are not supported by this driver");
+        }
+
+        if (is_array($jobs)) {
+            foreach ($jobs as $job) {
+                $queueForJob = self::getQueue($job, $queue);
+                $jobFactory->addFutureJob($job, $queueForJob);
+            }
+        } else {
+            $queueForJob = self::getQueue($jobs, $queue);
+            $jobFactory->addFutureJob($jobs, $queueForJob);
         }
     }
 }
