@@ -2,9 +2,9 @@
 
 namespace Tina4Jobs\Traits;
 
-Trait Tina4Queueable
+trait Tina4Queueable
 {
-    private string|int $jobId;
+    private string|int|null $jobId = null;
 
     private int $attempt;
 
@@ -12,15 +12,19 @@ Trait Tina4Queueable
 
     /**
      * Set the job id for the job
-     * @param $jobId
+     * @param int|string $jobId
      * @return void
      */
-    public function setJobId($jobId): void
+    public function setJobId(int|string $jobId): void
     {
         $this->jobId = $jobId;
     }
 
-    public function getJobId(): int|string
+    /**
+     * The id of the job in its queue, or null before it has been taken off a queue
+     * @return int|string|null
+     */
+    public function getJobId(): int|string|null
     {
         return $this->jobId;
     }
@@ -31,11 +35,9 @@ Trait Tina4Queueable
      */
     public function getAttempts(): int
     {
-        if(empty($this->attempts)) {
-            $this->attempts = 2;
-        }
-
-        return $this->attempts;
+        // Read without assigning: jobs that don't declare $attempts would otherwise
+        // get a dynamic property, which is deprecated as of PHP 8.2
+        return empty($this->attempts) ? 2 : $this->attempts;
     }
 
     /**
@@ -71,13 +73,18 @@ Trait Tina4Queueable
         return $this->attempt;
     }
 
+    /**
+     * Start counting attempts again, used when a failed job is requeued by hand
+     * @return void
+     */
+    public function resetAttempts(): void
+    {
+        $this->attempt = 1;
+    }
+
     public function getTimeBetweenAttempts(): int
     {
-        if(empty($this->timeBetweenAttempts)) {
-            $this->timeBetweenAttempts = 20;
-        }
-
-        return $this->timeBetweenAttempts;
+        return empty($this->timeBetweenAttempts) ? 20 : $this->timeBetweenAttempts;
     }
 
     public function getTimeoutAfterTime(): int

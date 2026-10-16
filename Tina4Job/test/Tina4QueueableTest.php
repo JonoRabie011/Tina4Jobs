@@ -124,11 +124,15 @@ class Tina4QueueableTest extends TestCase
         $this->printHeader("Testing get timeout value");
 
         try {
-            // Create a class that uses the trait but overrides the attempts value
+            // Create a class that uses the trait but overrides the timeout value.
+            // Set in the constructor: redeclaring a trait property with a different default is a fatal error
             $customObject = new class {
-                use Tina4Queueable;// Custom attempts value
+                use Tina4Queueable;
 
-                protected int $timeOutAfter = 600;
+                public function __construct()
+                {
+                    $this->timeoutAfterTime = 600;
+                }
             };
 
             $this->assertEquals(600, $customObject->getTimeoutAfterTime());

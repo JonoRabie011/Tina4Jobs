@@ -7,9 +7,7 @@
 
 namespace Tina4Jobs;
 
-use RuntimeException;
 use Tina4Jobs\Tina4Queue\Tina4JobFactory;
-use Tina4Jobs\Tina4Queue\Tina4RedisJob;
 
 final class Tina4JobQueue
 {
@@ -22,8 +20,14 @@ final class Tina4JobQueue
      */
     private static function getQueue($job, $queue): string
     {
-        if (property_exists($job, 'queue')) {
-            return $job->queue;
+        // Read through reflection so a private or protected $queue works too;
+        // reading it directly threw "Cannot access private property"
+        if (is_object($job) && property_exists($job, 'queue')) {
+            $property = new \ReflectionProperty($job, 'queue');
+
+            if ($property->isInitialized($job) && !empty($property->getValue($job))) {
+                return (string)$property->getValue($job);
+            }
         }
 
         return $queue;
@@ -49,21 +53,26 @@ final class Tina4JobQueue
         }
     }
 
-    final static function pushWithDelay(object|array $jobs, string $queue = "default"): void
+    /**
+     * Add new job to the queue that only becomes available after a delay
+     * @param object|array $jobs The job to add to the queue or an array of jobs
+     * @param int $delay Number of seconds from now before the job can be processed
+     * @param string $queue The queue to add the job to
+     * @return void
+     */
+    final static function pushWithDelay(object|array $jobs, int $delay, string $queue = "default"): void
     {
         $jobFactory = Tina4JobFactory::createQueueDriver();
-        if($jobFactory instanceof Tina4RedisJob) {
-            throw new RuntimeException("Delayed jobs are not supported by this driver");
-        }
+        $availableAt = time() + max(0, $delay);
 
         if (is_array($jobs)) {
             foreach ($jobs as $job) {
                 $queueForJob = self::getQueue($job, $queue);
-                $jobFactory->addFutureJob($job, $queueForJob);
+                $jobFactory->addFutureJob($job, $availableAt, $queueForJob);
             }
         } else {
             $queueForJob = self::getQueue($jobs, $queue);
-            $jobFactory->addFutureJob($jobs, $queueForJob);
+            $jobFactory->addFutureJob($jobs, $availableAt, $queueForJob);
         }
     }
 }
