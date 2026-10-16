@@ -78,7 +78,12 @@ class Tina4RedisJob implements Tina4QueueInterface
         $job = $this->jobsConnection->rPop($queue);
 
         if (!empty($job)) {
-            $currentJobUnSerialized = unserialize(convert_uudecode($job->payload));
+            // rPop returns the raw string that addJob pushed with serialize()
+            $currentJobUnSerialized = unserialize($job);
+
+            if (!is_object($currentJobUnSerialized)) {
+                return null;
+            }
 
             /*
              * Set the job ID on the job object as a GUID since Redis does not have an auto-incrementing ID like a database.
