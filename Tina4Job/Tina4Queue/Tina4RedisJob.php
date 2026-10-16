@@ -40,7 +40,7 @@ class Tina4RedisJob implements Tina4QueueInterface
     private function openConnection(): void
     {
         try {
-            $this->jobsConnection->connect($_ENV["REDIS_HOST"], $_ENV["REDIS_PORT"]);
+            $this->jobsConnection->connect($_ENV["REDIS_HOST"], (int)$_ENV["REDIS_PORT"]);
         } catch (RedisException $e) {
             // Log or handle the connection error as needed
             echo "Failed to connect to Redis: ", $e->getMessage(), "\n";
@@ -113,7 +113,7 @@ class Tina4RedisJob implements Tina4QueueInterface
             $failedJob->queue = $queue;
             $failedJob->payload = $payload;
             $failedJob->exception = $exception;
-            $failedJob->failed_at = date("Y-m-d H:i:s");
+            $failedJob->failedAt = date("Y-m-d H:i:s");
             $failedJob->save();
         } catch (InvalidArgumentException|\Exception $e) {
             echo "\n\n\n\nFailed to mark job as failed: ", $e->getMessage(), "\n";

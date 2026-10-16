@@ -2,7 +2,7 @@
 
 namespace Tina4Jobs\Traits;
 
-Trait Tina4Queueable
+trait Tina4Queueable
 {
     private string|int $jobId;
 
@@ -12,10 +12,10 @@ Trait Tina4Queueable
 
     /**
      * Set the job id for the job
-     * @param $jobId
+     * @param int|string $jobId
      * @return void
      */
-    public function setJobId($jobId): void
+    public function setJobId(int|string $jobId): void
     {
         $this->jobId = $jobId;
     }
@@ -31,11 +31,9 @@ Trait Tina4Queueable
      */
     public function getAttempts(): int
     {
-        if(empty($this->attempts)) {
-            $this->attempts = 2;
-        }
-
-        return $this->attempts;
+        // Read without assigning: jobs that don't declare $attempts would otherwise
+        // get a dynamic property, which is deprecated as of PHP 8.2
+        return empty($this->attempts) ? 2 : $this->attempts;
     }
 
     /**
@@ -73,11 +71,7 @@ Trait Tina4Queueable
 
     public function getTimeBetweenAttempts(): int
     {
-        if(empty($this->timeBetweenAttempts)) {
-            $this->timeBetweenAttempts = 20;
-        }
-
-        return $this->timeBetweenAttempts;
+        return empty($this->timeBetweenAttempts) ? 20 : $this->timeBetweenAttempts;
     }
 
     public function getTimeoutAfterTime(): int
