@@ -4,7 +4,7 @@ namespace Tina4Jobs\Traits;
 
 trait Tina4Queueable
 {
-    private string|int $jobId;
+    private string|int|null $jobId = null;
 
     private int $attempt;
 
@@ -20,7 +20,11 @@ trait Tina4Queueable
         $this->jobId = $jobId;
     }
 
-    public function getJobId(): int|string
+    /**
+     * The id of the job in its queue, or null before it has been taken off a queue
+     * @return int|string|null
+     */
+    public function getJobId(): int|string|null
     {
         return $this->jobId;
     }
@@ -67,6 +71,15 @@ trait Tina4Queueable
         }
 
         return $this->attempt;
+    }
+
+    /**
+     * Start counting attempts again, used when a failed job is requeued by hand
+     * @return void
+     */
+    public function resetAttempts(): void
+    {
+        $this->attempt = 1;
     }
 
     public function getTimeBetweenAttempts(): int

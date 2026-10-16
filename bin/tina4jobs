@@ -1,9 +1,36 @@
 #!/usr/bin/env php
 <?php
 
-use Tina4Jobs\Tina4Queue\Tina4JobFactory;
+/**
+ * Tina4 Jobs worker
+ *
+ *   tina4jobs [--queue=default] [--workers=10] [--sleep=2]
+ *
+ * --queue takes a comma separated list, polled in order: --queue=high,default runs
+ * "high" jobs first. Every option can also be set in the environment:
+ *
+ *   TINA4_JOBS_QUEUE         queues to work                        (default: default)
+ *   TINA4_JOBS_WORKERS       jobs run at the same time             (default: 10)
+ *   TINA4_JOBS_SLEEP         seconds to wait when the queue is empty (default: 2)
+ *   TINA4_JOBS_MAX_MEMORY    MB the worker may use before it restarts itself (default: 256)
+ *   TINA4_JOBS_STALE_AFTER   seconds a job may stay reserved before it is treated as
+ *                            abandoned and retried or failed; must be longer than your
+ *                            longest job timeout (default: 3600)
+ *   TINA4_JOBS_HEARTBEAT     file touched on every poll, for health checks
+ *                            (default: <tmp>/tina4jobs-<queues>.heartbeat)
+ *
+ * Each job runs in a fresh PHP process (this script with --run-job), not a fork. A fork
+ * shares the worker's database and Redis connections, and a forked child exiting closes
+ * them - with MySQL that left the worker unable to see any further jobs. A fresh process
+ * also means one job can never corrupt the next one's state.
+ *
+ * Stopping: SIGTERM or SIGINT stops taking new jobs, waits for running ones to finish,
+ * then exits. Set your process manager's stop timeout above your longest job.
+ */
 
-$replacePath = $argv[0];
+use Tina4Jobs\Tina4Queue\Tina4JobFactory;
+use Tina4Jobs\Tina4Queue\Tina4JobLog;
+use Tina4Jobs\Tina4Queue\Tina4JobPayload;
 
 global $rootPath;
 global $session;
@@ -11,38 +38,37 @@ global $session;
 $session = [];
 
 // ----------------------
-// Parse queue argument
+// Parse arguments
 // ----------------------
 
-$queueName = "default";
+$options = [];
+$runJob = false;
 
-if (!empty($argv) && is_array($argv)) {
-    for ($i = 1; $i < count($argv); $i++) {
+for ($i = 1, $count = count($argv ?? []); $i < $count; $i++) {
+    $arg = $argv[$i];
 
-        $arg = $argv[$i];
+    if ($arg === '--run-job') {
+        $runJob = true;
+        continue;
+    }
 
-        if (str_starts_with($arg, '--queue=')) {
-            $queueName = substr($arg, strlen('--queue='));
-            continue;
-        }
+    if (preg_match('/^(?:--(queue|workers|sleep)|-(q))=(.*)$/', $arg, $match)) {
+        $options[$match[1] ?: 'queue'] = $match[3];
+        continue;
+    }
 
-        if (str_starts_with($arg, '-q=')) {
-            $queueName = substr($arg, strlen('-q='));
-            continue;
-        }
-
-        if ($arg === '--queue' || $arg === '-q') {
-            if (isset($argv[$i + 1]) && !str_starts_with($argv[$i + 1], '-')) {
-                $queueName = $argv[$i + 1];
-                $i++;
-            }
-        }
+    if (in_array($arg, ['--queue', '-q', '--workers', '--sleep'], true)
+        && isset($argv[$i + 1]) && !str_starts_with($argv[$i + 1], '-')) {
+        $options[$arg === '-q' ? 'queue' : ltrim($arg, '-')] = $argv[++$i];
     }
 }
 
 // ----------------------
-// Resolve project root
+// Resolve project root and bootstrap the application
 // ----------------------
+
+// Composer's bin proxy runs this file through a stream wrapper
+$script = preg_replace('#^phpvfscomposer://#', '', __FILE__);
 
 foreach (get_included_files() as $file) {
     if (strpos($file, "vendor" . DIRECTORY_SEPARATOR . "autoload.php")) {
@@ -55,7 +81,7 @@ if (empty($rootPath)) {
     $rootPath = str_replace(
             "vendor" . DIRECTORY_SEPARATOR . "tina4components" . DIRECTORY_SEPARATOR . "tina4jobsmodule" . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "tina4jobs",
             "",
-            __FILE__
+            $script
     );
 
     $rootPath = str_replace("bin" . DIRECTORY_SEPARATOR . "tina4jobs", "", $rootPath);
@@ -69,183 +95,312 @@ if (file_exists($rootPath . "index.php")) {
     include_once $rootPath . "index.php";
 }
 
-gc_enable();
+/**
+ * Read a setting from the command line, then the environment, then the default
+ */
+function tina4JobsSetting(array $options, string $option, string $env, string|int $default): string
+{
+    if (isset($options[$option]) && $options[$option] !== '') {
+        return (string)$options[$option];
+    }
 
-try {
+    $value = $_ENV[$env] ?? getenv($env);
 
-    $jobQueue = Tina4JobFactory::createQueueDriver();
+    return ($value === false || $value === '' || $value === null) ? (string)$default : (string)$value;
+}
 
-    echo "Starting job processor for queue: {$queueName}\n";
+$queues = array_values(array_filter(array_map('trim', explode(',', tina4JobsSetting($options, 'queue', 'TINA4_JOBS_QUEUE', 'default')))));
+
+if (empty($queues)) {
+    $queues = ['default'];
+}
+
+if (!function_exists('pcntl_signal')) {
+    fwrite(STDERR, "tina4jobs needs the pcntl extension\n");
+    exit(1);
+}
+
+pcntl_async_signals(true);
+
+if ($runJob) {
+    exit(runJobFromStdin($queues[0]));
+}
+
+exit(runWorker($queues, $options, $script));
+
+// ----------------------
+// Worker
+// ----------------------
+
+/**
+ * Poll the queues and hand each job to its own process, until asked to stop
+ * @return int Exit code
+ */
+function runWorker(array $queues, array $options, string $script): int
+{
+    $maxWorkers = max(1, (int)tina4JobsSetting($options, 'workers', 'TINA4_JOBS_WORKERS', 10));
+    $sleepSeconds = max(1, (int)tina4JobsSetting($options, 'sleep', 'TINA4_JOBS_SLEEP', 2));
+    $maxMemory = max(32, (int)tina4JobsSetting($options, '', 'TINA4_JOBS_MAX_MEMORY', 256)) * 1024 * 1024;
+    $staleAfter = max(60, (int)tina4JobsSetting($options, '', 'TINA4_JOBS_STALE_AFTER', 3600));
+    $heartbeatFile = tina4JobsSetting(
+        $options, '', 'TINA4_JOBS_HEARTBEAT',
+        sys_get_temp_dir() . DIRECTORY_SEPARATOR . "tina4jobs-" . implode("-", $queues) . ".heartbeat"
+    );
+    $queueLabel = implode(",", $queues);
 
     $shouldStop = false;
+    $stopHandler = function (int $signal) use (&$shouldStop, $queueLabel) {
+        if (!$shouldStop) {
+            Tina4JobLog::info("Received signal {$signal}, finishing running jobs before exiting", $queueLabel);
+        }
+        $shouldStop = true;
+    };
+    pcntl_signal(SIGTERM, $stopHandler);
+    pcntl_signal(SIGINT, $stopHandler);
 
-    // ----------------------
-    // Worker config
-    // ----------------------
-
-    $maxWorkers = 10;
+    $jobQueue = Tina4JobFactory::createQueueDriver();
     $children = [];
-    $maxMemory = 256 * 1024 * 1024;
+    $consecutiveErrors = 0;
+    $idle = false;
+    $lastRecovery = 0;
 
-    // ----------------------
-    // Signal handling
-    // ----------------------
-
-    if (function_exists('pcntl_signal')) {
-
-        pcntl_signal(SIGTERM, function () use (&$shouldStop) {
-            echo "SIGTERM received. Shutting down...\n";
-            $shouldStop = true;
-        });
-
-        pcntl_signal(SIGINT, function () use (&$shouldStop) {
-            echo "SIGINT received. Shutting down...\n";
-            $shouldStop = true;
-        });
-
-    }
-
-    // ----------------------
-    // Worker Loop
-    // ----------------------
+    Tina4JobLog::info("Worker started: queues {$queueLabel}, {$maxWorkers} at a time, driver " . get_class($jobQueue), $queueLabel);
 
     while (!$shouldStop) {
+        @touch($heartbeatFile);
 
-        pcntl_signal_dispatch();
+        reapChildren($children, $jobQueue);
 
-        // Reap finished children
-        foreach ($children as $pid => $jobId) {
-
-            $result = pcntl_waitpid($pid, $status, WNOHANG);
-
-            if ($result > 0) {
-                unset($children[$pid]);
-            }
-        }
-
-        // Memory protection
         if (memory_get_usage(true) > $maxMemory) {
-            echo "Memory limit reached. Restarting worker...\n";
-            exit;
+            Tina4JobLog::info("Memory limit reached, restarting worker", $queueLabel);
+            break;
         }
 
-        // Limit worker count
         if (count($children) >= $maxWorkers) {
-            usleep(500000);
+            usleep(200000);
             continue;
         }
 
-        // Fetch next job
-        $nextJob = $jobQueue->getNextJob($queueName);
+        try {
+            if (time() - $lastRecovery >= 60 && method_exists($jobQueue, 'recoverStaleJobs')) {
+                $lastRecovery = time();
+                $runningIds = array_map(fn($child) => $child['job']->getJobId(), $children);
+
+                foreach ($queues as $queue) {
+                    $jobQueue->recoverStaleJobs($queue, $staleAfter, $runningIds);
+                }
+            }
+
+            [$nextJob, $jobQueueName] = [null, null];
+
+            foreach ($queues as $queue) {
+                if ($nextJob = $jobQueue->getNextJob($queue)) {
+                    $jobQueueName = $queue;
+                    break;
+                }
+            }
+
+            $consecutiveErrors = 0;
+        } catch (\Throwable $e) {
+            $consecutiveErrors++;
+            Tina4JobLog::error("Could not read the queue ({$consecutiveErrors} in a row): " . $e->getMessage(), $queueLabel);
+
+            if ($consecutiveErrors >= 10) {
+                // Probably a dead connection: exit so the process manager starts a fresh worker
+                Tina4JobLog::error("Giving up after {$consecutiveErrors} errors in a row", $queueLabel);
+                waitForChildren($children, $jobQueue);
+                return 1;
+            }
+
+            sleep($sleepSeconds);
+            continue;
+        }
 
         if (!$nextJob) {
-            echo "No jobs found. Waiting...\n";
-            sleep(2);
+            if (!$idle) {
+                Tina4JobLog::info("No jobs waiting, polling every {$sleepSeconds}s", $queueLabel);
+                $idle = true;
+            }
+
+            sleep($sleepSeconds);
             continue;
         }
 
-        if (get_class($nextJob) === "__PHP_Incomplete_Class") {
-            echo "Invalid job payload.\n";
+        $idle = false;
+
+        $child = startJobProcess($nextJob, $jobQueueName, $script);
+
+        if ($child === null) {
+            Tina4JobLog::error("Could not start a process for job {$nextJob->getJobId()}, returning it to the queue", $jobQueueName);
+            $jobQueue->releaseJob($nextJob, $sleepSeconds, $jobQueueName);
+            sleep($sleepSeconds);
             continue;
         }
 
-        echo "Processing job: " . get_class($nextJob) . "\n";
-
-        $pid = pcntl_fork();
-
-        if ($pid == -1) {
-            throw new Exception("Failed to fork worker");
-        }
-
-        if ($pid) {
-            // Parent
-            $children[$pid] = $nextJob->getJobId();
-            continue;
-        }
-
-        // ----------------------
-        // CHILD PROCESS
-        // ----------------------
-
-        runJob($nextJob, $jobQueue, $queueName);
-
-        exit(0);
+        $children[$child['pid']] = $child;
+        Tina4JobLog::info("Started job {$nextJob->getJobId()} (" . get_class($nextJob) . ") in process {$child['pid']}", $jobQueueName);
     }
 
-    echo "Worker shutting down gracefully\n";
+    waitForChildren($children, $jobQueue);
+    @unlink($heartbeatFile);
 
-} catch (Exception $e) {
+    Tina4JobLog::info("Worker stopped", $queueLabel);
 
-    echo "Worker error: " . $e->getMessage() . "\n";
+    return 0;
+}
 
+/**
+ * Start a fresh PHP process for the job, passing it the job on stdin
+ * @return array|null The child's bookkeeping, or null when the process could not start
+ */
+function startJobProcess(object $job, string $queue, string $script): ?array
+{
+    $command = [PHP_BINARY, '-d', 'memory_limit=' . ini_get('memory_limit'), $script, '--run-job', '--queue=' . $queue];
+    $process = proc_open($command, [0 => ['pipe', 'r'], 1 => STDOUT, 2 => STDERR], $pipes);
+
+    if (!is_resource($process)) {
+        return null;
+    }
+
+    fwrite($pipes[0], base64_encode(serialize($job)));
+    fclose($pipes[0]);
+
+    return [
+        'pid' => proc_get_status($process)['pid'],
+        'process' => $process,
+        'job' => $job,
+        'queue' => $queue,
+        'started' => time(),
+        'timeout' => method_exists($job, 'getTimeoutAfterTime') ? $job->getTimeoutAfterTime() : 120,
+    ];
+}
+
+/**
+ * Collect finished job processes, and kill any that ran well past their timeout.
+ * A process that exits non-zero died before it could record its result - a fatal
+ * error, or killed - so the worker records the failure for it.
+ */
+function reapChildren(array &$children, object $jobQueue): void
+{
+    foreach ($children as $pid => $child) {
+        $status = proc_get_status($child['process']);
+
+        if ($status['running']) {
+            // The job's own timeout fires first; this catches jobs stuck where it cannot interrupt them
+            if (time() - $child['started'] > $child['timeout'] + 30) {
+                Tina4JobLog::error("Job {$child['job']->getJobId()} is {$child['timeout']}s+30s past its start and still running, killing it", $child['queue']);
+                proc_terminate($child['process'], SIGKILL);
+            }
+
+            continue;
+        }
+
+        proc_close($child['process']);
+        unset($children[$pid]);
+
+        $exitCode = $status['signaled'] ? 128 + $status['termsig'] : $status['exitcode'];
+
+        if ($exitCode !== 0) {
+            $reason = $status['signaled']
+                ? "Job process was killed by signal {$status['termsig']}"
+                : "Job process exited with code {$exitCode} before recording a result (fatal error?)";
+
+            Tina4JobLog::error("Job {$child['job']->getJobId()}: {$reason}", $child['queue']);
+            recordFailure($child['job'], $jobQueue, $child['queue'], $reason);
+        }
+    }
+}
+
+/**
+ * Wait for every running job to finish, still enforcing their timeouts
+ */
+function waitForChildren(array &$children, object $jobQueue): void
+{
+    if (!empty($children)) {
+        Tina4JobLog::info("Waiting for " . count($children) . " running job(s) to finish");
+    }
+
+    while (!empty($children)) {
+        reapChildren($children, $jobQueue);
+        usleep(200000);
+    }
 }
 
 // ----------------------
-// Job Runner
+// Job process
 // ----------------------
 
-function runJob($job, $jobQueue, $queueName)
+/**
+ * Run the job the worker passed on stdin
+ * @return int 0 once the result is recorded, whether the job succeeded or failed
+ */
+function runJobFromStdin(string $queue): int
 {
+    // The worker decides when to stop; a Ctrl+C in a terminal must not kill jobs mid-run
+    pcntl_signal(SIGTERM, SIG_IGN);
+    pcntl_signal(SIGINT, SIG_IGN);
+
+    $job = @unserialize(base64_decode(stream_get_contents(STDIN)));
+
+    if (!is_object($job) || !method_exists($job, 'handle')) {
+        Tina4JobLog::error("Job process received an invalid job", $queue);
+        return 1;
+    }
+
+    runJob($job, Tina4JobFactory::createQueueDriver(), $queue);
+
+    return 0;
+}
+
+function runJob(object $job, object $jobQueue, string $queueName): void
+{
+    $timeout = method_exists($job, 'getTimeoutAfterTime') ? $job->getTimeoutAfterTime() : 120;
+    $started = microtime(true);
+
+    // Without a handler SIGALRM simply killed the process, so a timed out job was never failed or retried
+    pcntl_signal(SIGALRM, function () use ($timeout) {
+        throw new \RuntimeException("Job exceeded its timeout of {$timeout}s");
+    });
+    pcntl_alarm($timeout);
 
     try {
-
-        if (function_exists('pcntl_alarm')) {
-            pcntl_alarm($job->getTimeoutAfterTime());
-        }
-
         $job->handle();
-
-        if (property_exists($job, 'jobId') && !empty($job->getJobId())) {
-
-            $jobQueue->markJobCompleted(
-                    $job->getJobId()
-            );
-
-            echo "Job completed: " . $job->getJobId() . "\n";
-        }
-
-    } catch (Throwable $e) {
-
-        echo "Job failed: " . $e->getMessage() . "\n";
-
-        $shouldRetry = false;
-
-        if (property_exists($job, 'attempts')) {
-
-            if ($job->attempt()) {
-                $shouldRetry = true;
-            }
-
-        }
-
-        if ($shouldRetry) {
-
-            $jobQueue->releaseJob(
-                    $job,
-                    $job->getTimeBetweenAttempts(),
-                    $queueName
-            );
-
-            echo "Job released back to queue\n";
-
-        } else {
-
-            $jobQueue->markJobFailed(
-                    serialize($e),
-                    $job->getJobId() ?? -1,
-                    convert_uuencode(serialize($job)),
-                    $queueName
-            );
-
-            echo "Job permanently failed\n";
-
-        }
-
-    }
-
-    if (function_exists('pcntl_alarm')) {
         pcntl_alarm(0);
-    }
 
-    gc_collect_cycles();
+        // Not property_exists($job, 'jobId'): the property is private to Tina4Job, so it
+        // is false for every job subclass and completed jobs were never removed
+        if (is_numeric($job->getJobId())) {
+            $jobQueue->markJobCompleted((int)$job->getJobId());
+        }
+
+        Tina4JobLog::info(sprintf("Job %s completed in %.2fs", $job->getJobId(), microtime(true) - $started), $queueName);
+    } catch (\Throwable $e) {
+        pcntl_alarm(0);
+        Tina4JobLog::error("Job {$job->getJobId()} failed: " . $e->getMessage(), $queueName);
+        recordFailure($job, $jobQueue, $queueName, $e);
+    }
+}
+
+/**
+ * Retry the job if it has attempts left, otherwise move it to the failed jobs
+ */
+function recordFailure(object $job, object $jobQueue, string $queueName, \Throwable|string $reason): void
+{
+    try {
+        if (Tina4JobPayload::canRetry($job) && $job->attempt()) {
+            $jobQueue->releaseJob($job, $job->getTimeBetweenAttempts(), $queueName);
+            Tina4JobLog::info("Job {$job->getJobId()} will retry in {$job->getTimeBetweenAttempts()}s (attempt {$job->getAttempt()} of {$job->getAttempts()})", $queueName);
+            return;
+        }
+
+        $jobQueue->markJobFailed(
+            Tina4JobPayload::describe($reason),
+            $job->getJobId() ?? -1,
+            Tina4JobPayload::encode($job),
+            $queueName
+        );
+        Tina4JobLog::error("Job {$job->getJobId()} permanently failed", $queueName);
+    } catch (\Throwable $e) {
+        Tina4JobLog::error("Could not record the failure of job {$job->getJobId()}: " . $e->getMessage(), $queueName);
+    }
 }

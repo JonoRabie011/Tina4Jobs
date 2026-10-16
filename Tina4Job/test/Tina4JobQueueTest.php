@@ -68,4 +68,26 @@ class Tina4JobQueueTest extends TestCase
             throw $e;
         }
     }
+
+    public function testPushUsesPrivateQueueProperty()
+    {
+        $this->printHeader("Testing push with a private queue property");
+
+        Tina4JobQueue::push(new PrivateQueueTestJob());
+
+        $savedJob = (new \Job())->load("id > 0");
+        $this->assertEquals("notifications", $savedJob->queue);
+
+        $this->printResult("Private queue property", true);
+    }
+}
+
+/**
+ * Named, not anonymous: anonymous classes cannot be serialized onto a queue
+ */
+class PrivateQueueTestJob extends \Tina4Jobs\Tina4Job
+{
+    private string $queue = "notifications";
+
+    public function handle(): void {}
 }

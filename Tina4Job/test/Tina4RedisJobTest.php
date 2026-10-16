@@ -20,7 +20,7 @@ class Tina4RedisJobTest extends TestCase
         try {
             $redis = new \Redis();
             $redis->connect($_ENV['REDIS_HOST'], (int)$_ENV['REDIS_PORT'], 1);
-            $redis->del($this->queue);
+            $redis->del("tina4jobs:queue:{$this->queue}", "tina4jobs:delayed:{$this->queue}");
             $redis->close();
         } catch (\RedisException $e) {
             $this->markTestSkipped("Redis is not available: " . $e->getMessage());
@@ -47,5 +47,19 @@ class Tina4RedisJobTest extends TestCase
             $this->printResult("Redis job round trip", false);
             throw $e;
         }
+    }
+
+    public function testDelayedJobWaitsUntilDue()
+    {
+        $this->printHeader("Testing Redis delayed jobs");
+
+        $redisJob = new Tina4RedisJob();
+        $redisJob->addFutureJob(new TestJob(["name" => "later"]), time() + 3600, $this->queue);
+        $redisJob->addFutureJob(new TestJob(["name" => "due"]), time() - 1, $this->queue);
+
+        $this->assertInstanceOf(TestJob::class, $redisJob->getNextJob($this->queue), "Due job is available");
+        $this->assertNull($redisJob->getNextJob($this->queue), "Future job is still waiting");
+
+        $this->printResult("Redis delayed jobs", true);
     }
 }

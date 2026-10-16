@@ -7,9 +7,7 @@
 
 namespace Tina4Jobs;
 
-use RuntimeException;
 use Tina4Jobs\Tina4Queue\Tina4JobFactory;
-use Tina4Jobs\Tina4Queue\Tina4RedisJob;
 
 final class Tina4JobQueue
 {
@@ -22,8 +20,14 @@ final class Tina4JobQueue
      */
     private static function getQueue($job, $queue): string
     {
-        if (property_exists($job, 'queue')) {
-            return $job->queue;
+        // Read through reflection so a private or protected $queue works too;
+        // reading it directly threw "Cannot access private property"
+        if (is_object($job) && property_exists($job, 'queue')) {
+            $property = new \ReflectionProperty($job, 'queue');
+
+            if ($property->isInitialized($job) && !empty($property->getValue($job))) {
+                return (string)$property->getValue($job);
+            }
         }
 
         return $queue;
@@ -59,10 +63,6 @@ final class Tina4JobQueue
     final static function pushWithDelay(object|array $jobs, int $delay, string $queue = "default"): void
     {
         $jobFactory = Tina4JobFactory::createQueueDriver();
-        if($jobFactory instanceof Tina4RedisJob) {
-            throw new RuntimeException("Delayed jobs are not supported by this driver");
-        }
-
         $availableAt = time() + max(0, $delay);
 
         if (is_array($jobs)) {

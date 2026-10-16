@@ -9,15 +9,16 @@ CREATE TABLE tina4_failed_jobs (
                              failed_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Jobs table
+-- Jobs table. reserved_at / available_at / created_at are Unix timestamps (integers),
+-- which is what the queue writes and compares against.
 CREATE TABLE tina4_jobs (
                       id           SERIAL PRIMARY KEY,
                       queue        TEXT NOT NULL,
                       payload      TEXT NOT NULL,
                       attempts     INTEGER NOT NULL,
-                      reserved_at  TIMESTAMP WITH TIME ZONE,
-                      available_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                      created_at   TIMESTAMP WITH TIME ZONE NOT NULL
+                      reserved_at  BIGINT,
+                      available_at BIGINT NOT NULL,
+                      created_at   BIGINT NOT NULL
 );
 
 -- Index on queue for faster lookups
